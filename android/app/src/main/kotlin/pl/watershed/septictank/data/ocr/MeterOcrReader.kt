@@ -3,11 +3,13 @@ package pl.watershed.septictank.data.ocr
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.media.ExifInterface
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -22,6 +24,15 @@ import kotlinx.coroutines.tasks.await
  * generyczny model może w ogóle nie rozpoznać cyfr głównego okienka odometru -- w takim wypadku
  * `suggestedLiters` będzie `null` i to oczekiwane zachowanie (bezpieczniejsze niż zgadywanie),
  * użytkownik wprowadza odczyt ręcznie na ekranie potwierdzenia (FR-003).
+ *
+ * KOREKTA ORIENTACJI EXIF: aparaty telefonów bardzo często zapisują piksele JPEG w jednej
+ * orientacji, opisując właściwy obrót wyłącznie w metadanych EXIF `Orientation` -- ani
+ * `BitmapFactory`, ani ML Kit `InputImage.fromBitmap(bitmap, rotationDegrees)` z `rotationDegrees =
+ * 0` nie odczytują tej flagi automatycznie. Zdjęcie licznika obrócone o 90°/270° względem pionu
+ * wygląda dla obu przebiegów OCR (0° i 180°, patrz niżej) tak samo źle -- retry 180° nie naprawia
+ * błędu, którego przyczyną jest w rzeczywistości obrót o 90°. [decodeUprightBitmap] prostuje obraz
+ * wg EXIF przed dalszym przetwarzaniem (ten sam problem i ta sama poprawka co w projekcie
+ * fuel_management -> `ReceiptOcrReader.decodeUprightBitmap`).
  */
 class MeterOcrReader {
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
@@ -35,12 +46,13 @@ class MeterOcrReader {
     data class OcrResult(val suggestedLiters: Long?, val rawText: String)
 
     suspend fun recognize(photoFile: File): OcrResult {
-        val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
+        val bitmap = decodeUprightBitmap(photoFile)
             ?: return OcrResult(null, "")
 
         // Liczniki bywają montowane/fotografowane "do góry nogami" (np. gdy podejście rury jest od
         // góry) -- generyczny OCR słabo radzi sobie z tekstem obróconym o 180 stopni, więc próbujemy
-        // obu orientacji i łączymy kandydatów.
+        // obu orientacji i łączymy kandydatów. To NIE zastępuje korekty EXIF powyżej -- tamta
+        // prostuje zdjęcie do pionu, ta dodatkowo próbuje fizyczne odwrócenie samego licznika.
         val upright = recognizer.process(InputImage.fromBitmap(bitmap, 0)).await()
         val rotatedBitmap = rotate180(bitmap)
         val rotated = recognizer.process(InputImage.fromBitmap(rotatedBitmap, 0)).await()
@@ -55,8 +67,37 @@ class MeterOcrReader {
         return OcrResult(suggestedLiters, rawText)
     }
 
-    private fun rotate180(bitmap: Bitmap): Bitmap {
-        val matrix = Matrix().apply { postRotate(180f) }
+    /**
+     * Dekoduje zdjęcie i obraca je zgodnie z flagą EXIF `Orientation`, jeśli jest ustawiona (patrz
+     * dokumentacja klasy wyżej). Bez tej korekty obraz obrócony o 90°/270° przez aparat telefonu
+     * daje OCR-owi tekst biegnący pionowo -- ani przebieg 0°, ani retry 180° tego nie naprawia.
+     */
+    private fun decodeUprightBitmap(file: File): Bitmap? {
+        val original = BitmapFactory.decodeFile(file.absolutePath) ?: return null
+        val orientation = try {
+            ExifInterface(file.absolutePath).getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL,
+            )
+        } catch (_: IOException) {
+            ExifInterface.ORIENTATION_NORMAL
+        }
+        val exifRotationDegrees = when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> 90
+            ExifInterface.ORIENTATION_ROTATE_180 -> 180
+            ExifInterface.ORIENTATION_ROTATE_270 -> 270
+            else -> 0
+        }
+        if (exifRotationDegrees == 0) return original
+        val rotated = rotate(original, exifRotationDegrees.toFloat())
+        original.recycle()
+        return rotated
+    }
+
+    private fun rotate180(bitmap: Bitmap): Bitmap = rotate(bitmap, 180f)
+
+    private fun rotate(bitmap: Bitmap, degrees: Float): Bitmap {
+        val matrix = Matrix().apply { postRotate(degrees) }
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
