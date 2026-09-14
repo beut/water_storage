@@ -16,6 +16,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import pl.watershed.septictank.SepticTankApplication
 
 /**
@@ -26,11 +29,9 @@ import pl.watershed.septictank.SepticTankApplication
 fun OnboardingScreen(onCompleted: () -> Unit) {
     val context = LocalContext.current
     val container = (context.applicationContext as SepticTankApplication).container
-    val viewModel = androidx.lifecycle.viewmodel.compose.viewModel<SettingsViewModel>(
-        factory = androidx.lifecycle.viewmodel.viewModelFactory {
-            androidx.lifecycle.viewmodel.initializer {
-                SettingsViewModel(container.tankConfigurationRepository, context.applicationContext)
-            }
+    val viewModel: SettingsViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { SettingsViewModel(container.tankConfigurationRepository, context.applicationContext) }
         },
     )
 

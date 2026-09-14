@@ -129,8 +129,8 @@ Struktura zgodna z `plan.md` → Project Structure: pojedynczy moduł Android w 
 **Purpose**: Ulepszenia obejmujące wiele historyjek jednocześnie
 
 - [X] T032 [P] Dodać ikonę aplikacji i zasoby tekstowe (polskie napisy UI) w `android/app/src/main/res/`
-- [ ] T033 [P] Zweryfikować działanie w pełni offline (tryb samolotowy) zgodnie z `quickstart.md` → „Weryfikacja działania offline” (FR-014) — **wymaga fizycznego urządzenia/emulatora, niedostępnego w tym środowisku; do wykonania przez dewelopera**
-- [ ] T034 Przeprowadzić ręczną walidację wszystkich historyjek (US1–US4) zgodnie z `quickstart.md` na fizycznym urządzeniu — **wymaga fizycznego urządzenia/emulatora, niedostępnego w tym środowisku; do wykonania przez dewelopera**
+- [ ] T033 [P] Zweryfikować działanie w pełni offline (tryb samolotowy) zgodnie z `quickstart.md` → „Weryfikacja działania offline” (FR-014) — **wymaga fizycznego urządzenia/emulatora z aparatem, niedostępnego w tym środowisku; do wykonania przez dewelopera**. Projekt buduje się poprawnie (`./gradlew assembleDebug` → BUILD SUCCESSFUL, JDK 17 + Android SDK 34 zainstalowane lokalnie), ale zachowanie na urządzeniu nie zostało jeszcze zweryfikowane.
+- [ ] T034 Przeprowadzić ręczną walidację wszystkich historyjek (US1–US4) zgodnie z `quickstart.md` na fizycznym urządzeniu — **wymaga fizycznego urządzenia/emulatora z aparatem, niedostępnego w tym środowisku; do wykonania przez dewelopera**
 - [X] T035 [P] Przejrzeć i doprecyzować walidację danych wejściowych zgodnie z regułami z `data-model.md` we wszystkich repozytoriach (`valueM3` ≥ 0, `capacityM3` > 0, `warningThresholdPercent` w zakresie 1–99)
 
 ---
