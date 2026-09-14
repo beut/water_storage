@@ -54,6 +54,7 @@ fun HomeScreen(onOpenHistory: () -> Unit, onOpenSettings: () -> Unit) {
             ReadingConfirmationScreen(
                 suggestedLiters = step.suggestedLiters,
                 isAnomalous = step.isAnomalous,
+                ocrRawText = step.ocrRawText,
                 onConfirm = viewModel::confirmReading,
                 onCancel = viewModel::onCancelReadingFlow,
             )

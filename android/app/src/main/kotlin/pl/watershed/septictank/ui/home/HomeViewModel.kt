@@ -21,8 +21,12 @@ import pl.watershed.septictank.domain.usage.UsageState
 sealed interface ReadingFlowStep {
     data object Idle : ReadingFlowStep
     data object Capturing : ReadingFlowStep
-    data class Confirming(val photoFile: File, val suggestedLiters: Long?, val isAnomalous: Boolean) :
-        ReadingFlowStep
+    data class Confirming(
+        val photoFile: File,
+        val suggestedLiters: Long?,
+        val isAnomalous: Boolean,
+        val ocrRawText: String,
+    ) : ReadingFlowStep
 }
 
 data class HomeUiState(
@@ -75,11 +79,17 @@ class HomeViewModel(
     fun onPhotoCaptured(photoFile: File) {
         viewModelScope.launch {
             // FR-002/FR-014: rozpoznawanie w pełni lokalne, bez wywołań sieciowych.
-            val suggestedLiters = ocrReader.recognizeLiters(photoFile)
+            val ocrResult = ocrReader.recognize(photoFile)
             val latest = meterReadingRepository.latest()
-            val isAnomalous = suggestedLiters != null && AnomalyDetector.isAnomalous(suggestedLiters, latest)
+            val isAnomalous =
+                ocrResult.suggestedLiters != null && AnomalyDetector.isAnomalous(ocrResult.suggestedLiters, latest)
             _uiState.value = _uiState.value.copy(
-                readingFlowStep = ReadingFlowStep.Confirming(photoFile, suggestedLiters, isAnomalous),
+                readingFlowStep = ReadingFlowStep.Confirming(
+                    photoFile,
+                    ocrResult.suggestedLiters,
+                    isAnomalous,
+                    ocrResult.rawText,
+                ),
             )
         }
     }

@@ -3,7 +3,10 @@ package pl.watershed.septictank.ui.home
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
@@ -16,7 +19,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import pl.watershed.septictank.data.db.entities.ReadingSource
 
 /**
@@ -28,6 +33,7 @@ import pl.watershed.septictank.data.db.entities.ReadingSource
 fun ReadingConfirmationScreen(
     suggestedLiters: Long?,
     isAnomalous: Boolean,
+    ocrRawText: String,
     onConfirm: (valueLiters: Long, source: ReadingSource) -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -35,6 +41,7 @@ fun ReadingConfirmationScreen(
         mutableStateOf(suggestedLiters?.let { formatLitersAsM3(it) } ?: "")
     }
     var anomalyAcknowledged by remember { mutableStateOf(false) }
+    var showRawOcrText by remember { mutableStateOf(false) }
 
     val parsedLiters = text.replace(',', '.').toDoubleOrNull()?.let { Math.round(it * 1000.0) }
     val canConfirm = parsedLiters != null && parsedLiters >= 0 && (!isAnomalous || anomalyAcknowledged)
@@ -63,6 +70,21 @@ fun ReadingConfirmationScreen(
                     color = MaterialTheme.colorScheme.error,
                 )
             }
+        }
+
+        TextButton(onClick = { showRawOcrText = !showRawOcrText }, modifier = Modifier.padding(top = 12.dp)) {
+            Text(if (showRawOcrText) "Ukryj tekst rozpoznany przez OCR" else "Pokaż tekst rozpoznany przez OCR")
+        }
+        if (showRawOcrText) {
+            Text(
+                text = ocrRawText.ifBlank { "(OCR nie rozpoznał żadnego tekstu na zdjęciu)" },
+                fontFamily = FontFamily.Monospace,
+                fontSize = 11.sp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 240.dp)
+                    .verticalScroll(rememberScrollState()),
+            )
         }
 
         Row(modifier = Modifier.padding(top = 24.dp)) {

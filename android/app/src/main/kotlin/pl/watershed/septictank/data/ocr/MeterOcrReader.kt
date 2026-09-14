@@ -25,12 +25,16 @@ class MeterOcrReader {
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     /**
-     * @return rozpoznana wartość w litrach (odpowiednik m3 z dokładnością do 0,001 m3, FR-002),
-     * albo `null`, gdy nie udało się jednoznacznie wyodrębnić liczby (wymaga ręcznego wprowadzenia,
-     * FR-003).
+     * [suggestedLiters]: `null`, gdy nie udało się jednoznacznie wyodrębnić liczby (wymaga
+     * ręcznego wprowadzenia, FR-003). [rawText]: pełny tekst rozpoznany przez ML Kit (obie próby
+     * orientacji) -- pokazywany w ReadingConfirmationScreen jako diagnostyka, gdy automatyczny
+     * odczyt jest błędny, żeby dało się zrozumieć, co OCR faktycznie widzi na tarczy.
      */
-    suspend fun recognizeLiters(photoFile: File): Long? {
-        val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath) ?: return null
+    data class OcrResult(val suggestedLiters: Long?, val rawText: String)
+
+    suspend fun recognize(photoFile: File): OcrResult {
+        val bitmap = BitmapFactory.decodeFile(photoFile.absolutePath)
+            ?: return OcrResult(null, "")
 
         // Liczniki bywają montowane/fotografowane "do góry nogami" (np. gdy podejście rury jest od
         // góry) -- generyczny OCR słabo radzi sobie z tekstem obróconym o 180 stopni, więc próbujemy
@@ -40,11 +44,13 @@ class MeterOcrReader {
         val rotated = recognizer.process(InputImage.fromBitmap(rotatedBitmap, 0)).await()
         rotatedBitmap.recycle()
 
+        val rawText = "-- oryginał --\n${upright.text}\n-- obrócone 180° --\n${rotated.text}"
         val candidates = extractCandidates(upright) + extractCandidates(rotated)
-        return pickBest(candidates)?.let { candidate ->
-            val valueM3 = candidate.text.replace(',', '.').toDoubleOrNull() ?: return null
+        val suggestedLiters = pickBest(candidates)?.let { candidate ->
+            val valueM3 = candidate.text.replace(',', '.').toDoubleOrNull() ?: return@let null
             Math.round(valueM3 * LITERS_PER_M3)
         }
+        return OcrResult(suggestedLiters, rawText)
     }
 
     private fun rotate180(bitmap: Bitmap): Bitmap {
