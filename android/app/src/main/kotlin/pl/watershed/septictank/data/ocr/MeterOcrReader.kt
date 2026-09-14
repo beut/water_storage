@@ -15,11 +15,13 @@ import kotlinx.coroutines.tasks.await
  * modelu ML Kit Text Recognition spakowanego z aplikacją (research.md -> "Rozpoznawanie odczytu
  * licznika (OCR)", FR-002, FR-014). Nie wykonuje żadnych wywołań sieciowych.
  *
- * OGRANICZENIE: ML Kit Text Recognition czyta wyłącznie drukowany tekst (cyfrowe kółka odometru).
- * Nie potrafi odczytać pozycji czerwonych wskazówek na analogowych podziałkach (x0,1 .. x0,0001)
- * -- to wymagałoby osobnej analizy obrazu (kąt wskazówki), poza zakresem OCR tekstu. Odczyt
- * automatyczny odpowiada więc głównemu, cyfrowemu okienku licznika; drobniejsza precyzja z
- * podziałek analogowych nie jest wspierana i w razie potrzeby wymaga ręcznej korekty (FR-003).
+ * OGRANICZENIE (potwierdzone na realnym urządzeniu): ML Kit Text Recognition czyta wyłącznie
+ * drukowany tekst. Nie potrafi odczytać pozycji czerwonych wskazówek na analogowych podziałkach
+ * (x0,1 .. x0,0001) -- to wymagałoby osobnej analizy obrazu (kąt wskazówki), poza zakresem OCR
+ * tekstu. Na niektórych licznikach (mechaniczne bębenki cyfrowe za brudnym/odblaskowym szkłem)
+ * generyczny model może w ogóle nie rozpoznać cyfr głównego okienka odometru -- w takim wypadku
+ * `suggestedLiters` będzie `null` i to oczekiwane zachowanie (bezpieczniejsze niż zgadywanie),
+ * użytkownik wprowadza odczyt ręcznie na ekranie potwierdzenia (FR-003).
  */
 class MeterOcrReader {
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
@@ -74,9 +76,21 @@ class MeterOcrReader {
             if (!PURE_NUMBER_REGEX.matches(cleaned)) return@mapNotNull null
             val digitCount = cleaned.count { it.isDigit() }
             if (digitCount !in MIN_ODOMETER_DIGITS..MAX_ODOMETER_DIGITS) return@mapNotNull null
+            val value = cleaned.replace(',', '.').toDoubleOrNull() ?: return@mapNotNull null
+            if (isDialCalibrationConstant(value)) return@mapNotNull null
             val height = line.boundingBox?.height() ?: return@mapNotNull null
             Candidate(cleaned, height)
         }
+
+    /**
+     * Podziałki tarczy licznika są opisane etykietami "x0,1" / "x0,01" / "x0,001" / "x0,0001"
+     * ("x"/"*" bywa gubione przez OCR). Zaobserwowane na realnym urządzeniu: te liczby przechodzą
+     * przez filtr czysto-liczbowych linii 4-8 cyfr i wyglądają identycznie jak prawdziwy odczyt w
+     * postaci ułamkowej -- odrzucamy je jawnie jako znane stałe kalibracyjne, prawie na pewno nie
+     * będące odczytem.
+     */
+    private fun isDialCalibrationConstant(value: Double): Boolean =
+        DIAL_CALIBRATION_VALUES.any { kotlin.math.abs(value - it) < CALIBRATION_EPSILON }
 
     /**
      * Domowe zużycie wody rośnie powoli w skali lat -- odczyt licznika MUST zaczynać się od "0"
@@ -96,5 +110,7 @@ class MeterOcrReader {
         private const val MIN_ODOMETER_DIGITS = 4
         private const val MAX_ODOMETER_DIGITS = 8
         private const val LITERS_PER_M3 = 1000.0
+        private val DIAL_CALIBRATION_VALUES = listOf(0.1, 0.01, 0.001, 0.0001)
+        private const val CALIBRATION_EPSILON = 0.00005
     }
 }
