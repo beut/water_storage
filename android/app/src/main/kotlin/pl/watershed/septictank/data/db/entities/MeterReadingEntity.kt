@@ -18,6 +18,9 @@ enum class ReadingSource {
  * [valueLiters] przechowuje wartość odczytu w litrach (liczba całkowita), co odpowiada
  * jednostce m3 z dokładnością do 0,001 m3 ustalonej w sesji /speckit-clarify (FR-002),
  * bez utraty precyzji charakterystycznej dla arytmetyki zmiennoprzecinkowej.
+ *
+ * [photoPath] jest `null` dla odczytów wpisanych bezpośrednio ręcznie (FR-015, bez zdjęcia) --
+ * dla odczytów rozpoczętych od zdjęcia (AUTO_OCR / MANUAL_CORRECTED) jest zawsze ustawione.
  */
 @Entity(tableName = "meter_readings")
 data class MeterReadingEntity(
@@ -25,7 +28,7 @@ data class MeterReadingEntity(
     val id: Long = 0,
     val timestampMillis: Long,
     val valueLiters: Long,
-    val photoPath: String,
+    val photoPath: String?,
     val source: ReadingSource,
     val isAnomalous: Boolean = false,
     val anomalyAcknowledged: Boolean = false,

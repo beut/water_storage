@@ -6,15 +6,15 @@ Encje odpowiadają sekcji „Key Entities” w spec.md, uszczegółowionej o pol
 
 ## MeterReading (Odczyt licznika)
 
-Reprezentuje pojedynczy odczyt wartości licznika wody w danym momencie. Źródło: FR-001…FR-004, FR-011.
+Reprezentuje pojedynczy odczyt wartości licznika wody w danym momencie. Źródło: FR-001…FR-004, FR-011, FR-015.
 
 | Pole | Typ | Reguły |
 |---|---|---|
 | `id` | Long (PK, auto) | Unikalny identyfikator odczytu |
 | `timestamp` | Instant/epoch millis | Data i czas wykonania odczytu; wymagane |
 | `valueM3` | Decimal(0,001) | Wartość odczytu w m³, dokładność do 0,001 m³ (FR-002); MUST być ≥ 0 |
-| `photoPath` | String | Ścieżka do pliku zdjęcia źródłowego w pamięci wewnętrznej aplikacji (FR-004); wymagane |
-| `source` | Enum(`AUTO_OCR`, `MANUAL_CORRECTED`, `MANUAL_ENTERED`) | Czy wartość pochodzi z automatycznego rozpoznania, ręcznej korekty wyniku OCR, czy pełnego ręcznego wpisu (FR-003) |
+| `photoPath` | String, nullable | Ścieżka do pliku zdjęcia źródłowego w pamięci wewnętrznej aplikacji (FR-004); `null` dla odczytów wpisanych bezpośrednio ręcznie, bez zdjęcia (FR-015) |
+| `source` | Enum(`AUTO_OCR`, `MANUAL_CORRECTED`, `MANUAL_ENTERED`) | Czy wartość pochodzi z automatycznego rozpoznania, ręcznej korekty wyniku OCR, czy pełnego ręcznego wpisu -- w tym wpisu bez zdjęcia (FR-003, FR-015) |
 | `isAnomalous` | Boolean | Ustawiane, gdy `valueM3` < `valueM3` poprzedniego odczytu (FR-011); domyślnie `false` |
 | `anomalyAcknowledged` | Boolean | Ustawiane na `true` po potwierdzeniu przez użytkownika anomalnego odczytu (FR-011) |
 

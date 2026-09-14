@@ -13,7 +13,7 @@ import pl.watershed.septictank.data.db.entities.TankConfigurationEntity
 
 @Database(
     entities = [MeterReadingEntity::class, PumpingEventEntity::class, TankConfigurationEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -29,11 +29,15 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getInstance(context: Context): AppDatabase =
             instance ?: synchronized(this) {
+                // fallbackToDestructiveMigration: aplikacja jest we wczesnej fazie testów (przed
+                // wydaniem), więc zamiast pisać migracje dla każdej zmiany schematu, przy zmianie
+                // wersji baza jest po prostu zakładana od nowa (utrata danych testowych jest
+                // akceptowalna teraz; przed wydaniem produkcyjnym trzeba to zastąpić Migration).
                 instance ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     DATABASE_NAME,
-                ).build().also { instance = it }
+                ).fallbackToDestructiveMigration().build().also { instance = it }
             }
     }
 }

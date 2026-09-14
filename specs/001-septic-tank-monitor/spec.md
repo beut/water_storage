@@ -93,7 +93,7 @@ Użytkownik konfiguruje pojemność swojego zbiornika oraz opcjonalnie włącza 
 - **FR-001**: System MUST umożliwiać użytkownikowi wykonanie zdjęcia licznika wody za pomocą aparatu urządzenia.
 - **FR-002**: System MUST automatycznie odczytywać wartość wskazywaną przez licznik wody na podstawie wykonanego zdjęcia, w jednostce metrów sześciennych (m³) z dokładnością do 0,001 m³ (1 litr).
 - **FR-003**: System MUST umożliwiać użytkownikowi ręczne potwierdzenie lub poprawienie odczytanej wartości przed jej zapisaniem, w szczególności gdy odczyt automatyczny jest niepewny lub nieudany.
-- **FR-004**: System MUST przechowywać historię odczytów licznika wraz z datą, wartością odczytu oraz powiązanym zdjęciem źródłowym.
+- **FR-004**: System MUST przechowywać historię odczytów licznika wraz z datą, wartością odczytu oraz powiązanym zdjęciem źródłowym, jeśli odczyt pochodzi ze zdjęcia (patrz FR-015 dla odczytów wpisanych bez zdjęcia).
 - **FR-005**: System MUST obliczać bieżące zużycie wody jako różnicę między najnowszym odczytem a odczytem zarejestrowanym przy ostatnim wywozie ścieków (lub pierwszym zarejestrowanym odczytem, jeśli żaden wywóz jeszcze nie miał miejsca).
 - **FR-006**: System MUST udostępniać użytkownikowi akcję „Wywóz ścieków”, która rejestruje zdarzenie opróżnienia zbiornika wraz z datą i bieżącym odczytem licznika jako nowy punkt bazowy, oraz zeruje wyświetlane zużycie.
 - **FR-007**: System MUST przechowywać historię zdarzeń wywozu ścieków, w tym datę oraz powiązany odczyt licznika.
@@ -104,10 +104,11 @@ Użytkownik konfiguruje pojemność swojego zbiornika oraz opcjonalnie włącza 
 - **FR-012**: System MUST umożliwiać użytkownikowi przeglądanie historii odczytów licznika oraz historii wywozów ścieków.
 - **FR-013**: System MUST umożliwiać użytkownikowi ustawienie cyklicznych przypomnień o wykonaniu zdjęcia licznika wody.
 - **FR-014**: System MUST rozpoznawać wartość odczytu licznika w pełni lokalnie na urządzeniu (on-device), bez wymogu połączenia z internetem do działania podstawowych funkcji aplikacji.
+- **FR-015**: System MUST umożliwiać użytkownikowi wpisanie odczytu licznika bezpośrednio, ręcznie, bez konieczności wykonywania zdjęcia (np. gdy automatyczne rozpoznanie jest zawodne dla danego modelu licznika lub użytkownik chce po prostu szybko uzupełnić zaległy odczyt).
 
 ### Key Entities *(include if feature involves data)*
 
-- **Odczyt licznika (Water Meter Reading)**: pojedynczy odczyt wartości licznika wody w danym momencie; obejmuje datę i czas, wartość odczytu, zdjęcie źródłowe oraz informację, czy wartość pochodzi z automatycznego rozpoznania czy z ręcznej korekty użytkownika.
+- **Odczyt licznika (Water Meter Reading)**: pojedynczy odczyt wartości licznika wody w danym momencie; obejmuje datę i czas, wartość odczytu, opcjonalne zdjęcie źródłowe (brak, gdy odczyt wpisano bezpośrednio ręcznie, FR-015) oraz informację, czy wartość pochodzi z automatycznego rozpoznania, ręcznej korekty wyniku OCR, czy pełnego ręcznego wpisu.
 - **Zdarzenie wywozu ścieków (Pumping Event)**: reprezentuje moment opróżnienia zbiornika; obejmuje datę wywozu oraz powiązany odczyt licznika stanowiący nowy punkt bazowy do liczenia zużycia.
 - **Konfiguracja zbiornika (Tank Configuration)**: właściwości zbiornika użytkownika; obejmuje pojemność zbiornika oraz próg ostrzegawczy.
 - **Bieżący stan zużycia (Usage State)**: wartość wyliczana jako różnica między najnowszym odczytem a odczytem bazowym z ostatniego wywozu; obejmuje wartość zużycia, procent wykorzystania pojemności zbiornika oraz aktualny poziom ostrzeżenia.

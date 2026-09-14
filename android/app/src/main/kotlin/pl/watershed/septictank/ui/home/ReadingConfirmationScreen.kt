@@ -25,16 +25,20 @@ import androidx.compose.ui.unit.sp
 import pl.watershed.septictank.data.db.entities.ReadingSource
 
 /**
- * Ekran potwierdzenia odczytu (FR-003, FR-011): pokazuje wynik OCR (jeśli dostępny), pozwala go
- * poprawić lub wpisać ręcznie, i wymaga jawnego potwierdzenia checkboxem dla odczytów anomalnych
- * (data-model.md -> MeterReading.anomalyAcknowledged) zanim akcja "Zapisz" stanie się aktywna.
+ * Ekran potwierdzenia/wpisania odczytu (FR-003, FR-011, FR-015): pokazuje wynik OCR gdy zdjęcie
+ * zostało zrobione (lub pusty formularz przy ręcznym wpisie bez zdjęcia -- [hasPhoto] = false),
+ * pozwala go poprawić lub wpisać ręcznie, i wymaga jawnego potwierdzenia checkboxem dla odczytów
+ * anomalnych (data-model.md -> MeterReading.anomalyAcknowledged) zanim akcja "Zapisz" stanie się
+ * aktywna. Anomalia jest liczona na bieżąco z aktualnie wpisanej wartości (nie z sugestii OCR),
+ * więc działa poprawnie także po ręcznej korekcie.
  */
 @Composable
 fun ReadingConfirmationScreen(
     suggestedLiters: Long?,
-    isAnomalous: Boolean,
+    latestValueLiters: Long?,
+    hasPhoto: Boolean,
     ocrRawText: String,
-    onConfirm: (valueLiters: Long, source: ReadingSource) -> Unit,
+    onConfirm: (valueLiters: Long, source: ReadingSource, isAnomalous: Boolean) -> Unit,
     onCancel: () -> Unit,
 ) {
     var text by remember {
@@ -44,14 +48,15 @@ fun ReadingConfirmationScreen(
     var showRawOcrText by remember { mutableStateOf(false) }
 
     val parsedLiters = text.replace(',', '.').toDoubleOrNull()?.let { Math.round(it * 1000.0) }
+    val isAnomalous = parsedLiters != null && latestValueLiters != null && parsedLiters < latestValueLiters
     val canConfirm = parsedLiters != null && parsedLiters >= 0 && (!isAnomalous || anomalyAcknowledged)
 
     Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
         Text(
-            if (suggestedLiters == null) {
-                "Nie udało się jednoznacznie odczytać wartości ze zdjęcia. Wpisz odczyt ręcznie (m³)."
-            } else {
-                "Rozpoznany odczyt licznika (m³). Popraw, jeśli jest niepoprawny."
+            when {
+                !hasPhoto -> "Wpisz odczyt licznika ręcznie (m³)."
+                suggestedLiters == null -> "Nie udało się jednoznacznie odczytać wartości ze zdjęcia. Wpisz odczyt ręcznie (m³)."
+                else -> "Rozpoznany odczyt licznika (m³). Popraw, jeśli jest niepoprawny."
             },
         )
         OutlinedTextField(
@@ -72,19 +77,21 @@ fun ReadingConfirmationScreen(
             }
         }
 
-        TextButton(onClick = { showRawOcrText = !showRawOcrText }, modifier = Modifier.padding(top = 12.dp)) {
-            Text(if (showRawOcrText) "Ukryj tekst rozpoznany przez OCR" else "Pokaż tekst rozpoznany przez OCR")
-        }
-        if (showRawOcrText) {
-            Text(
-                text = ocrRawText.ifBlank { "(OCR nie rozpoznał żadnego tekstu na zdjęciu)" },
-                fontFamily = FontFamily.Monospace,
-                fontSize = 11.sp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 240.dp)
-                    .verticalScroll(rememberScrollState()),
-            )
+        if (hasPhoto) {
+            TextButton(onClick = { showRawOcrText = !showRawOcrText }, modifier = Modifier.padding(top = 12.dp)) {
+                Text(if (showRawOcrText) "Ukryj tekst rozpoznany przez OCR" else "Pokaż tekst rozpoznany przez OCR")
+            }
+            if (showRawOcrText) {
+                Text(
+                    text = ocrRawText.ifBlank { "(OCR nie rozpoznał żadnego tekstu na zdjęciu)" },
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 11.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 240.dp)
+                        .verticalScroll(rememberScrollState()),
+                )
+            }
         }
 
         Row(modifier = Modifier.padding(top = 24.dp)) {
@@ -92,14 +99,14 @@ fun ReadingConfirmationScreen(
             Button(
                 enabled = canConfirm,
                 onClick = {
-                    val source = if (suggestedLiters == null) {
+                    val source = if (!hasPhoto || suggestedLiters == null) {
                         ReadingSource.MANUAL_ENTERED
                     } else if (parsedLiters == suggestedLiters) {
                         ReadingSource.AUTO_OCR
                     } else {
                         ReadingSource.MANUAL_CORRECTED
                     }
-                    onConfirm(parsedLiters ?: 0, source)
+                    onConfirm(parsedLiters ?: 0, source, isAnomalous)
                 },
             ) {
                 Text("Zapisz odczyt")

@@ -53,7 +53,8 @@ fun HomeScreen(onOpenHistory: () -> Unit, onOpenSettings: () -> Unit) {
         is ReadingFlowStep.Confirming -> {
             ReadingConfirmationScreen(
                 suggestedLiters = step.suggestedLiters,
-                isAnomalous = step.isAnomalous,
+                latestValueLiters = state.latestReadingLiters,
+                hasPhoto = step.photoFile != null,
                 ocrRawText = step.ocrRawText,
                 onConfirm = viewModel::confirmReading,
                 onCancel = viewModel::onCancelReadingFlow,
@@ -95,6 +96,9 @@ fun HomeScreen(onOpenHistory: () -> Unit, onOpenSettings: () -> Unit) {
 
             Row(modifier = Modifier.padding(top = 24.dp)) {
                 Button(onClick = viewModel::onOpenCamera) { Text("Zrób zdjęcie licznika") }
+            }
+            Row(modifier = Modifier.padding(top = 8.dp)) {
+                TextButton(onClick = viewModel::onManualEntry) { Text("Wpisz odczyt ręcznie") }
             }
             Row(modifier = Modifier.padding(top = 12.dp)) {
                 Button(
