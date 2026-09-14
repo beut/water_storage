@@ -14,6 +14,11 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+        ndk {
+            // Ogranicza natywne biblioteki (CameraX/ML Kit) do arm64-v8a w celu zmniejszenia
+            // rozmiaru debug APK -- pokrywa niemal wszystkie współczesne telefony z Androidem.
+            abiFilters += "arm64-v8a"
+        }
     }
 
     buildTypes {
