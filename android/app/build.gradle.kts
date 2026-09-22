@@ -15,8 +15,8 @@ android {
         versionCode = 1
         versionName = "1.0"
         ndk {
-            // Ogranicza natywne biblioteki (CameraX/ML Kit) do arm64-v8a w celu zmniejszenia
-            // rozmiaru debug APK -- pokrywa niemal wszystkie współczesne telefony z Androidem.
+            // Restricts native libraries (CameraX/ML Kit) to arm64-v8a to reduce debug APK size
+            // -- covers nearly all modern Android phones.
             abiFilters += "arm64-v8a"
         }
     }
@@ -50,7 +50,7 @@ android {
 }
 
 dependencies {
-    // UI: Jetpack Compose (research.md -> "Interfejs użytkownika")
+    // UI: Jetpack Compose (research.md -> "User interface")
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
@@ -60,23 +60,23 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.2")
 
-    // Przechwytywanie zdjęcia licznika (research.md -> "Przechwytywanie zdjęcia licznika")
+    // Meter photo capture (research.md -> "Meter photo capture")
     implementation("androidx.camera:camera-core:1.3.4")
     implementation("androidx.camera:camera-camera2:1.3.4")
     implementation("androidx.camera:camera-lifecycle:1.3.4")
     implementation("androidx.camera:camera-view:1.3.4")
 
-    // OCR w pełni on-device (research.md -> "Rozpoznawanie odczytu licznika (OCR)", FR-014)
+    // Fully on-device OCR (research.md -> "Meter reading recognition (OCR)", FR-014)
     implementation("com.google.mlkit:text-recognition:16.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 
-    // Lokalne przechowywanie danych (research.md -> "Przechowywanie danych")
+    // Local data storage (research.md -> "Data storage")
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
 
-    // Cykliczne przypomnienia (research.md -> "Przypomnienia i powiadomienia")
+    // Periodic reminders (research.md -> "Reminders and notifications")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
 
     testImplementation("junit:junit:4.13.2")

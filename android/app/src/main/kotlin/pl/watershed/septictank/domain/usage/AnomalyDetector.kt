@@ -3,9 +3,9 @@ package pl.watershed.septictank.domain.usage
 import pl.watershed.septictank.data.db.entities.MeterReadingEntity
 
 /**
- * Wykrywa anomalie odczytu: nowa wartość niższa niż poprzedni odczyt (data-model.md ->
- * MeterReading -- reguła walidacji, FR-011). Anomalny odczyt wymaga jawnego potwierdzenia
- * użytkownika (patrz ReadingConfirmationScreen, T016) zanim zostanie potraktowany jak zwykły.
+ * Detects anomalous readings: a new value lower than the previous reading (data-model.md ->
+ * MeterReading -- validation rule, FR-011). An anomalous reading requires explicit user
+ * confirmation (see ReadingConfirmationScreen, T016) before it's treated as normal.
  */
 object AnomalyDetector {
     fun isAnomalous(newValueLiters: Long, previousLatest: MeterReadingEntity?): Boolean {

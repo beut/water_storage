@@ -5,11 +5,11 @@ import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 
 /**
- * Zdarzenie wywozu ścieków (data-model.md -> PumpingEvent, FR-006, FR-007).
+ * Pumping (septic tank emptying) event (data-model.md -> PumpingEvent, FR-006, FR-007).
  *
- * [baselineReadingId] MUST wskazywać na najnowszy dostępny [MeterReadingEntity] w momencie
- * naciśnięcia przycisku "Wywóz ścieków" -- egzekwowane w PumpingEventRepository (T019/T020),
- * ponieważ reguła zależy od stanu bazy w chwili zapisu, a nie tylko od schematu.
+ * [baselineReadingId] MUST point to the latest available [MeterReadingEntity] at the moment the
+ * "Empty tank" button is pressed -- enforced in PumpingEventRepository (T019/T020), because the
+ * rule depends on the database state at save time, not just on the schema.
  */
 @Entity(
     tableName = "pumping_events",

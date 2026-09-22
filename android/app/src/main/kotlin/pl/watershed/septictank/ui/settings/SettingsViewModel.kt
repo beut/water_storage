@@ -18,7 +18,7 @@ data class SettingsUiState(
     val reminderIntervalDays: Int = 7,
 )
 
-/** FR-008, FR-013: konfiguracja pojemności zbiornika, progu ostrzegawczego i przypomnień. */
+/** FR-008, FR-013: tank capacity, warning threshold and reminder configuration. */
 class SettingsViewModel(
     private val tankConfigurationRepository: TankConfigurationRepository,
     private val appContext: Context,
@@ -39,7 +39,7 @@ class SettingsViewModel(
         }
     }
 
-    /** @return `true`, gdy zapis się powiódł (wartość poprawna, capacityLiters > 0). */
+    /** @return `true` if the save succeeded (valid value, capacityLiters > 0). */
     fun saveCapacity(capacityM3Text: String): Boolean {
         val capacityM3 = capacityM3Text.replace(',', '.').toDoubleOrNull() ?: return false
         val capacityLiters = Math.round(capacityM3 * 1000.0)

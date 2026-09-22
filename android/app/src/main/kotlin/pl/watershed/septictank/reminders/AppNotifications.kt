@@ -8,7 +8,7 @@ import androidx.core.app.NotificationManagerCompat
 import pl.watershed.septictank.R
 import pl.watershed.septictank.domain.warning.WarningLevel
 
-/** Wysyła przypomnienia o zdjęciu licznika (FR-013) i ostrzeżenia o zapełnieniu zbiornika (FR-009, FR-010). */
+/** Sends meter-photo reminders (FR-013) and tank-fill warnings (FR-009, FR-010). */
 class AppNotifications(private val context: Context) {
 
     init {
@@ -24,7 +24,7 @@ class AppNotifications(private val context: Context) {
         )
     }
 
-    /** FR-010: różne komunikaty dla APPROACHING i EXCEEDED; nic nie wysyła dla NONE. */
+    /** FR-010: different messages for APPROACHING and EXCEEDED; sends nothing for NONE. */
     fun showWarning(level: WarningLevel) {
         val text = when (level) {
             WarningLevel.NONE -> return

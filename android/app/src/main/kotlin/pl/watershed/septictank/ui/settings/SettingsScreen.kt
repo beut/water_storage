@@ -38,7 +38,7 @@ private fun rememberSettingsViewModel(container: AppContainer): SettingsViewMode
     )
 }
 
-/** FR-008, FR-013: konfiguracja pojemności zbiornika, progu ostrzegawczego i przypomnień. */
+/** FR-008, FR-013: tank capacity, warning threshold and reminder configuration. */
 @Composable
 fun SettingsScreen(onBack: () -> Unit) {
     val context = LocalContext.current

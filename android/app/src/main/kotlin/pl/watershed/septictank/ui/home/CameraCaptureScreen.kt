@@ -37,9 +37,9 @@ import pl.watershed.septictank.data.photo.PhotoStorage
 import pl.watershed.septictank.util.Logging
 
 /**
- * Ekran przechwytywania zdjęcia licznika wody aparatem urządzenia (CameraX, research.md ->
- * "Przechwytywanie zdjęcia licznika", FR-001). Wymaga uprawnienia CAMERA w czasie działania
- * (Android 8+); bez zgody pokazuje prośbę o uprawnienie zamiast podglądu z aparatu.
+ * Screen for capturing a water meter photo with the device camera (CameraX, research.md ->
+ * "Meter photo capture", FR-001). Requires the CAMERA runtime permission (Android 8+); without
+ * consent it shows a permission request instead of the camera preview.
  */
 @Composable
 fun CameraCaptureScreen(

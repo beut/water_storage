@@ -10,8 +10,8 @@ import java.util.concurrent.TimeUnit
 import pl.watershed.septictank.SepticTankApplication
 
 /**
- * Cykliczne przypomnienie o zrobieniu zdjęcia licznika (FR-013, research.md -> "Przypomnienia i
- * powiadomienia"). Działa w pełni offline -- WorkManager nie wymaga połączenia z internetem.
+ * Periodic reminder to take a meter photo (FR-013, research.md -> "Reminders and notifications").
+ * Works fully offline -- WorkManager doesn't require an internet connection.
  */
 class MeterPhotoReminderWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {

@@ -13,35 +13,35 @@ import java.io.IOException
 import kotlinx.coroutines.tasks.await
 
 /**
- * Rozpoznaje wartość odczytu licznika ze zdjęcia w pełni lokalnie na urządzeniu, przy użyciu
- * modelu ML Kit Text Recognition spakowanego z aplikacją (research.md -> "Rozpoznawanie odczytu
- * licznika (OCR)", FR-002, FR-014). Nie wykonuje żadnych wywołań sieciowych.
+ * Recognizes the meter reading value from a photo fully on-device, using the ML Kit Text
+ * Recognition model bundled with the app (research.md -> "Meter reading recognition (OCR)",
+ * FR-002, FR-014). Makes no network calls.
  *
- * OGRANICZENIE (potwierdzone na realnym urządzeniu): ML Kit Text Recognition czyta wyłącznie
- * drukowany tekst. Nie potrafi odczytać pozycji czerwonych wskazówek na analogowych podziałkach
- * (x0,1 .. x0,0001) -- to wymagałoby osobnej analizy obrazu (kąt wskazówki), poza zakresem OCR
- * tekstu. Na niektórych licznikach (mechaniczne bębenki cyfrowe za brudnym/odblaskowym szkłem)
- * generyczny model może w ogóle nie rozpoznać cyfr głównego okienka odometru -- w takim wypadku
- * `suggestedLiters` będzie `null` i to oczekiwane zachowanie (bezpieczniejsze niż zgadywanie),
- * użytkownik wprowadza odczyt ręcznie na ekranie potwierdzenia (FR-003).
+ * LIMITATION (confirmed on a real device): ML Kit Text Recognition only reads printed text. It
+ * cannot read the position of red pointers on analog dials (x0.1 .. x0.0001) -- that would
+ * require separate image analysis (pointer angle), outside the scope of text OCR. On some meters
+ * (mechanical digit drums behind dirty/reflective glass) the generic model may fail to recognize
+ * the main odometer window digits at all -- in that case `suggestedLiters` will be `null`, which
+ * is the expected behavior (safer than guessing); the user enters the reading manually on the
+ * confirmation screen (FR-003).
  *
- * KOREKTA ORIENTACJI EXIF: aparaty telefonów bardzo często zapisują piksele JPEG w jednej
- * orientacji, opisując właściwy obrót wyłącznie w metadanych EXIF `Orientation` -- ani
- * `BitmapFactory`, ani ML Kit `InputImage.fromBitmap(bitmap, rotationDegrees)` z `rotationDegrees =
- * 0` nie odczytują tej flagi automatycznie. Zdjęcie licznika obrócone o 90°/270° względem pionu
- * wygląda dla obu przebiegów OCR (0° i 180°, patrz niżej) tak samo źle -- retry 180° nie naprawia
- * błędu, którego przyczyną jest w rzeczywistości obrót o 90°. [decodeUprightBitmap] prostuje obraz
- * wg EXIF przed dalszym przetwarzaniem (ten sam problem i ta sama poprawka co w projekcie
- * fuel_management -> `ReceiptOcrReader.decodeUprightBitmap`).
+ * EXIF ORIENTATION CORRECTION: phone cameras very often save JPEG pixels in a single orientation,
+ * describing the actual rotation only in the EXIF `Orientation` metadata -- neither
+ * `BitmapFactory` nor ML Kit's `InputImage.fromBitmap(bitmap, rotationDegrees)` with
+ * `rotationDegrees = 0` read that flag automatically. A meter photo rotated 90°/270° from upright
+ * looks equally bad to both OCR passes (0° and 180°, see below) -- the 180° retry doesn't fix an
+ * error that's actually caused by a 90° rotation. [decodeUprightBitmap] straightens the image per
+ * EXIF before further processing (same issue and same fix as in the fuel_management project ->
+ * `ReceiptOcrReader.decodeUprightBitmap`).
  */
 class MeterOcrReader {
     private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
 
     /**
-     * [suggestedLiters]: `null`, gdy nie udało się jednoznacznie wyodrębnić liczby (wymaga
-     * ręcznego wprowadzenia, FR-003). [rawText]: pełny tekst rozpoznany przez ML Kit (obie próby
-     * orientacji) -- pokazywany w ReadingConfirmationScreen jako diagnostyka, gdy automatyczny
-     * odczyt jest błędny, żeby dało się zrozumieć, co OCR faktycznie widzi na tarczy.
+     * [suggestedLiters]: `null` when a number couldn't be unambiguously extracted (requires
+     * manual entry, FR-003). [rawText]: the full text recognized by ML Kit (both orientation
+     * attempts) -- shown in ReadingConfirmationScreen as diagnostics when the automatic reading
+     * is wrong, so the user can understand what OCR actually sees on the dial.
      */
     data class OcrResult(val suggestedLiters: Long?, val rawText: String)
 
@@ -49,10 +49,11 @@ class MeterOcrReader {
         val bitmap = decodeUprightBitmap(photoFile)
             ?: return OcrResult(null, "")
 
-        // Liczniki bywają montowane/fotografowane "do góry nogami" (np. gdy podejście rury jest od
-        // góry) -- generyczny OCR słabo radzi sobie z tekstem obróconym o 180 stopni, więc próbujemy
-        // obu orientacji i łączymy kandydatów. To NIE zastępuje korekty EXIF powyżej -- tamta
-        // prostuje zdjęcie do pionu, ta dodatkowo próbuje fizyczne odwrócenie samego licznika.
+        // Meters are sometimes mounted/photographed "upside down" (e.g. when the pipe comes in
+        // from above) -- generic OCR handles text rotated 180 degrees poorly, so we try both
+        // orientations and merge the candidates. This does NOT replace the EXIF correction above
+        // -- that one straightens the photo to upright, this one additionally tries physically
+        // flipping the meter itself.
         val upright = recognizer.process(InputImage.fromBitmap(bitmap, 0)).await()
         val rotatedBitmap = rotate180(bitmap)
         val rotated = recognizer.process(InputImage.fromBitmap(rotatedBitmap, 0)).await()
@@ -68,9 +69,9 @@ class MeterOcrReader {
     }
 
     /**
-     * Dekoduje zdjęcie i obraca je zgodnie z flagą EXIF `Orientation`, jeśli jest ustawiona (patrz
-     * dokumentacja klasy wyżej). Bez tej korekty obraz obrócony o 90°/270° przez aparat telefonu
-     * daje OCR-owi tekst biegnący pionowo -- ani przebieg 0°, ani retry 180° tego nie naprawia.
+     * Decodes the photo and rotates it according to the EXIF `Orientation` flag, if set (see the
+     * class doc above). Without this correction, an image rotated 90°/270° by the phone camera
+     * gives OCR text running vertically -- neither the 0° pass nor the 180° retry fixes that.
      */
     private fun decodeUprightBitmap(file: File): Bitmap? {
         val original = BitmapFactory.decodeFile(file.absolutePath) ?: return null
@@ -104,12 +105,12 @@ class MeterOcrReader {
     private data class Candidate(val text: String, val height: Int)
 
     /**
-     * Tarcza licznika zawiera wiele innych liczb poza odczytem (numer seryjny, parametry typu
-     * "H-R=160", oznaczenia podziałek "x0,1"/"x0,01" itd.) -- branie pierwszej liczby z całego
-     * rozpoznanego tekstu łapało przypadkowo te etykiety zamiast odczytu. Zamiast tego: bierzemy
-     * tylko linie, które w całości są liczbą (bez liter/znaków -- odrzuca to etykiety typu
-     * "H-R=160" czy "TCM 142/08"), o długości 4-8 cyfr (odrzuca pojedyncze cyfry z podziałek tarcz
-     * i bardzo długi numer seryjny).
+     * The meter dial contains many other numbers besides the reading (serial number, parameters
+     * like "H-R=160", dial-multiplier labels "x0.1"/"x0.01" etc.) -- taking the first number from
+     * the whole recognized text was accidentally catching these labels instead of the reading.
+     * Instead: only take lines that are entirely a number (no letters/symbols -- this rejects
+     * labels like "H-R=160" or "TCM 142/08"), 4-8 digits long (rejects single digits from dial
+     * markings and the very long serial number).
      */
     private fun extractCandidates(result: Text): List<Candidate> =
         result.textBlocks.flatMap { it.lines }.mapNotNull { line ->
@@ -124,21 +125,20 @@ class MeterOcrReader {
         }
 
     /**
-     * Podziałki tarczy licznika są opisane etykietami "x0,1" / "x0,01" / "x0,001" / "x0,0001"
-     * ("x"/"*" bywa gubione przez OCR). Zaobserwowane na realnym urządzeniu: te liczby przechodzą
-     * przez filtr czysto-liczbowych linii 4-8 cyfr i wyglądają identycznie jak prawdziwy odczyt w
-     * postaci ułamkowej -- odrzucamy je jawnie jako znane stałe kalibracyjne, prawie na pewno nie
-     * będące odczytem.
+     * The meter dial's multiplier markings are labeled "x0.1" / "x0.01" / "x0.001" / "x0.0001"
+     * (the "x"/"*" is often lost by OCR). Observed on a real device: these numbers pass the
+     * pure-number 4-8 digit line filter and look identical to a real fractional reading -- we
+     * explicitly reject them as known calibration constants, almost certainly not a reading.
      */
     private fun isDialCalibrationConstant(value: Double): Boolean =
         DIAL_CALIBRATION_VALUES.any { kotlin.math.abs(value - it) < CALIBRATION_EPSILON }
 
     /**
-     * Domowe zużycie wody rośnie powoli w skali lat -- odczyt licznika MUST zaczynać się od "0"
-     * jeszcze bardzo długo (zanim zbliży się do 1000 m3), więc kandydaci zaczynający się od "0" są
-     * bardziej wiarygodni niż przypadkowe liczby o podobnej długości wyłapane z tarczy. Wśród nich
-     * (lub, gdy żaden nie zaczyna się od zera, wśród wszystkich) wybieramy tego o największej
-     * wysokości ramki -- licznikowe okienko z odczytem ma fizycznie największe cyfry na tarczy.
+     * Household water usage grows slowly over years -- the meter reading MUST start with "0" for
+     * a very long time still (before it approaches 1000 m3), so candidates starting with "0" are
+     * more trustworthy than random numbers of similar length picked up from the dial. Among those
+     * (or, if none starts with zero, among all of them) we pick the one with the tallest bounding
+     * box -- the reading window has physically the largest digits on the dial.
      */
     private fun pickBest(candidates: List<Candidate>): Candidate? {
         val startingWithZero = candidates.filter { it.text.startsWith("0") }

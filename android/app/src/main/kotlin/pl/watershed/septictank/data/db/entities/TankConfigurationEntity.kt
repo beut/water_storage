@@ -4,10 +4,10 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 /**
- * Konfiguracja zbiornika (data-model.md -> TankConfiguration, FR-008, FR-009, FR-010).
+ * Tank configuration (data-model.md -> TankConfiguration, FR-008, FR-009, FR-010).
  *
- * V1 obsługuje jeden zbiornik/licznik na instalację (decyzja z sesji /speckit-clarify),
- * dlatego tabela zawsze przechowuje co najwyżej jeden rekord o stałym [id] = [SINGLETON_ID].
+ * V1 supports one tank/meter per installation (decision from the /speckit-clarify session),
+ * so the table always holds at most one record with a fixed [id] = [SINGLETON_ID].
  */
 @Entity(tableName = "tank_configuration")
 data class TankConfigurationEntity(

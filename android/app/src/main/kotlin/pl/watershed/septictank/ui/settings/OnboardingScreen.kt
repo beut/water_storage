@@ -22,8 +22,8 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import pl.watershed.septictank.SepticTankApplication
 
 /**
- * Wstępna konfiguracja przy pierwszym uruchomieniu (US4, Acceptance Scenario 1): użytkownik MUST
- * podać pojemność zbiornika, zanim aplikacja zacznie wyliczać ostrzeżenia (FR-008).
+ * Initial setup on first launch (US4, Acceptance Scenario 1): the user MUST provide the tank
+ * capacity before the app starts computing warnings (FR-008).
  */
 @Composable
 fun OnboardingScreen(onCompleted: () -> Unit) {
