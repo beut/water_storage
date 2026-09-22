@@ -29,15 +29,11 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getInstance(context: Context): AppDatabase =
             instance ?: synchronized(this) {
-                // fallbackToDestructiveMigration: aplikacja jest we wczesnej fazie testów (przed
-                // wydaniem), więc zamiast pisać migracje dla każdej zmiany schematu, przy zmianie
-                // wersji baza jest po prostu zakładana od nowa (utrata danych testowych jest
-                // akceptowalna teraz; przed wydaniem produkcyjnym trzeba to zastąpić Migration).
                 instance ?: Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     DATABASE_NAME,
-                ).fallbackToDestructiveMigration().build().also { instance = it }
+                ).addMigrations(MIGRATION_1_2).build().also { instance = it }
             }
     }
 }
