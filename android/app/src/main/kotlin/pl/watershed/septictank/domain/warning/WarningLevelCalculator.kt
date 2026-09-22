@@ -1,6 +1,6 @@
 package pl.watershed.septictank.domain.warning
 
-/** Poziom pilności ostrzeżenia o zapełnieniu zbiornika (data-model.md -> UsageState.warningLevel, FR-010). */
+/** Urgency level of the tank-fill warning (data-model.md -> UsageState.warningLevel, FR-010). */
 enum class WarningLevel {
     NONE,
     APPROACHING,
@@ -8,9 +8,9 @@ enum class WarningLevel {
 }
 
 /**
- * Wyznacza [WarningLevel] na podstawie procentu wykorzystania pojemności zbiornika (FR-009, FR-010).
- * Zwraca [WarningLevel.NONE], gdy pojemność zbiornika nie jest jeszcze skonfigurowana (Edge Case
- * ze spec.md: brak ostrzeżeń bez skonfigurowanej pojemności, ale odczyty nadal są zapisywane).
+ * Determines the [WarningLevel] from the percentage of tank capacity used (FR-009, FR-010).
+ * Returns [WarningLevel.NONE] when the tank capacity isn't configured yet (Edge Case from
+ * spec.md: no warnings without a configured capacity, but readings are still saved).
  */
 object WarningLevelCalculator {
     fun calculate(usagePercentOfCapacity: Double?, warningThresholdPercent: Int): WarningLevel {

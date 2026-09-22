@@ -25,12 +25,12 @@ import androidx.compose.ui.unit.sp
 import pl.watershed.septictank.data.db.entities.ReadingSource
 
 /**
- * Ekran potwierdzenia/wpisania odczytu (FR-003, FR-011, FR-015): pokazuje wynik OCR gdy zdjęcie
- * zostało zrobione (lub pusty formularz przy ręcznym wpisie bez zdjęcia -- [hasPhoto] = false),
- * pozwala go poprawić lub wpisać ręcznie, i wymaga jawnego potwierdzenia checkboxem dla odczytów
- * anomalnych (data-model.md -> MeterReading.anomalyAcknowledged) zanim akcja "Zapisz" stanie się
- * aktywna. Anomalia jest liczona na bieżąco z aktualnie wpisanej wartości (nie z sugestii OCR),
- * więc działa poprawnie także po ręcznej korekcie.
+ * Reading confirmation/entry screen (FR-003, FR-011, FR-015): shows the OCR result when a photo
+ * was taken (or an empty form for manual entry without a photo -- [hasPhoto] = false), lets the
+ * user correct it or type it in, and requires explicit checkbox confirmation for anomalous
+ * readings (data-model.md -> MeterReading.anomalyAcknowledged) before the "Save" action becomes
+ * active. The anomaly is computed live from the currently entered value (not the OCR suggestion),
+ * so it also works correctly after a manual correction.
  */
 @Composable
 fun ReadingConfirmationScreen(

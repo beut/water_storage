@@ -10,7 +10,7 @@ import pl.watershed.septictank.ui.home.HomeScreen
 import pl.watershed.septictank.ui.settings.OnboardingScreen
 import pl.watershed.septictank.ui.settings.SettingsScreen
 
-/** Szkielet nawigacji Compose spinający ekrany Home, History i Settings (Phase 2: Foundational). */
+/** Compose navigation skeleton wiring together the Home, History and Settings screens (Phase 2: Foundational). */
 object Routes {
     const val ONBOARDING = "onboarding"
     const val HOME = "home"

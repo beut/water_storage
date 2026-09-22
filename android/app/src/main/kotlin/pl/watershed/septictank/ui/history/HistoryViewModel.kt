@@ -11,7 +11,7 @@ import pl.watershed.septictank.data.db.PumpingEventRepository
 import pl.watershed.septictank.data.db.entities.MeterReadingEntity
 import pl.watershed.septictank.data.db.entities.PumpingEventEntity
 
-/** FR-012: przegląd historii odczytów licznika oraz historii wywozów ścieków. */
+/** FR-012: overview of meter reading history and pumping event history. */
 data class HistoryUiState(
     val readings: List<MeterReadingEntity> = emptyList(),
     val pumpingEvents: List<PumpingEventEntity> = emptyList(),

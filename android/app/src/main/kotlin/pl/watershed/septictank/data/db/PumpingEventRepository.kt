@@ -6,11 +6,11 @@ import pl.watershed.septictank.data.db.dao.PumpingEventDao
 import pl.watershed.septictank.data.db.entities.PumpingEventEntity
 
 /**
- * Repozytorium zdarzeń wywozu ścieków (data-model.md -> PumpingEvent, FR-006, FR-007).
+ * Pumping event repository (data-model.md -> PumpingEvent, FR-006, FR-007).
  *
- * [registerPumping] egzekwuje regułę walidacji z data-model.md: `baselineReadingId` MUST
- * wskazywać na najnowszy dostępny odczyt w momencie wywozu; jeśli żaden odczyt nie istnieje,
- * akcja jest zablokowana (zwraca null) -- patrz Edge Case "pierwsze uruchomienie" w spec.md.
+ * [registerPumping] enforces the validation rule from data-model.md: `baselineReadingId` MUST
+ * point to the latest available reading at the time of pumping; if no reading exists yet, the
+ * action is blocked (returns null) -- see the "first launch" Edge Case in spec.md.
  */
 class PumpingEventRepository(
     private val dao: PumpingEventDao,

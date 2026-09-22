@@ -2,7 +2,7 @@ package pl.watershed.septictank.util
 
 import android.util.Log
 
-/** Cienka warstwa nad android.util.Log, żeby ujednolicić tag i mieć jedno miejsce do rozszerzenia. */
+/** Thin wrapper over android.util.Log to unify the tag and have a single place to extend. */
 object Logging {
     private const val TAG = "SepticTankMonitor"
 

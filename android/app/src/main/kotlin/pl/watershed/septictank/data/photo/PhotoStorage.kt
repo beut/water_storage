@@ -5,15 +5,15 @@ import java.io.File
 import java.util.UUID
 
 /**
- * Zapis i odczyt zdjęć licznika w pamięci wewnętrznej aplikacji (data-model.md ->
- * MeterReading.photoPath, FR-004). Zdjęcia nie opuszczają urządzenia (FR-014).
+ * Saves and reads meter photos in the app's internal storage (data-model.md ->
+ * MeterReading.photoPath, FR-004). Photos never leave the device (FR-014).
  */
 class PhotoStorage(private val context: Context) {
 
     private val photosDir: File
         get() = File(context.filesDir, "meter_photos").apply { mkdirs() }
 
-    /** Tworzy docelowy plik na nowe zdjęcie licznika i zwraca jego ścieżkę bezwzględną. */
+    /** Creates the target file for a new meter photo and returns its absolute path. */
     fun createPhotoFile(): File = File(photosDir, "${UUID.randomUUID()}.jpg")
 
     fun photoFile(photoPath: String): File = File(photoPath)

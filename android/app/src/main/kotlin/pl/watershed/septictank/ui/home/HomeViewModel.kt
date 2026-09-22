@@ -17,10 +17,10 @@ import pl.watershed.septictank.domain.usage.UsageCalculator
 import pl.watershed.septictank.domain.usage.UsageState
 
 /**
- * Krok przepływu rejestrowania odczytu (US1, FR-001..FR-003, FR-011, FR-015).
+ * Reading-registration flow step (US1, FR-001..FR-003, FR-011, FR-015).
  *
- * [photoFile] jest `null`, gdy użytkownik wybrał ręczne wpisanie odczytu bez zdjęcia (FR-015) --
- * w przeciwnym razie pochodzi z [ReadingFlowStep.Capturing].
+ * [photoFile] is `null` when the user chose to enter the reading manually without a photo
+ * (FR-015) -- otherwise it comes from [ReadingFlowStep.Capturing].
  */
 sealed interface ReadingFlowStep {
     data object Idle : ReadingFlowStep
@@ -60,7 +60,7 @@ class HomeViewModel(
                 usageState = usage,
                 hasAnyReading = latest != null,
                 latestReadingLiters = latest?.valueLiters,
-                // FR-009: ostrzeżenia MUST być wstrzymane bez skonfigurowanej pojemności (Edge Case).
+                // FR-009: warnings MUST be suppressed without a configured capacity (Edge Case).
                 missingCapacityWarning = latest != null && usage?.capacityLiters == null,
             )
         }
@@ -70,7 +70,7 @@ class HomeViewModel(
         _uiState.value = _uiState.value.copy(readingFlowStep = ReadingFlowStep.Capturing)
     }
 
-    /** FR-015: pozwala wpisać odczyt bezpośrednio, bez konieczności robienia zdjęcia i czekania na OCR. */
+    /** FR-015: allows entering a reading directly, without taking a photo and waiting for OCR. */
     fun onManualEntry() {
         _uiState.value = _uiState.value.copy(
             readingFlowStep = ReadingFlowStep.Confirming(photoFile = null, suggestedLiters = null, ocrRawText = ""),
@@ -87,7 +87,7 @@ class HomeViewModel(
 
     fun onPhotoCaptured(photoFile: File) {
         viewModelScope.launch {
-            // FR-002/FR-014: rozpoznawanie w pełni lokalne, bez wywołań sieciowych.
+            // FR-002/FR-014: recognition is fully on-device, no network calls.
             val ocrResult = ocrReader.recognize(photoFile)
             _uiState.value = _uiState.value.copy(
                 readingFlowStep = ReadingFlowStep.Confirming(photoFile, ocrResult.suggestedLiters, ocrResult.rawText),
@@ -96,8 +96,8 @@ class HomeViewModel(
     }
 
     /**
-     * [isAnomalous] jest wyliczane w ReadingConfirmationScreen na podstawie faktycznie wpisanej
-     * wartości (mogła zostać poprawiona względem sugestii OCR), nie sugestii OCR -- FR-011.
+     * [isAnomalous] is computed in ReadingConfirmationScreen based on the value actually entered
+     * (which may have been corrected from the OCR suggestion), not the OCR suggestion -- FR-011.
      */
     fun confirmReading(valueLiters: Long, source: ReadingSource, isAnomalous: Boolean) {
         val step = _uiState.value.readingFlowStep
@@ -118,7 +118,7 @@ class HomeViewModel(
         }
     }
 
-    /** FR-006: zablokowane, gdy nie istnieje jeszcze żaden odczyt (brak punktu bazowego). */
+    /** FR-006: blocked when no reading exists yet (no baseline point). */
     fun registerPumping() {
         viewModelScope.launch {
             pumpingEventRepository.registerPumping(System.currentTimeMillis())

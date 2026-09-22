@@ -4,10 +4,10 @@ import kotlinx.coroutines.flow.Flow
 import pl.watershed.septictank.data.db.dao.MeterReadingDao
 import pl.watershed.septictank.data.db.entities.MeterReadingEntity
 
-/** Repozytorium odczytów licznika (data-model.md -> MeterReading, FR-004). */
+/** Meter reading repository (data-model.md -> MeterReading, FR-004). */
 class MeterReadingRepository(private val dao: MeterReadingDao) {
 
-    /** @param reading.valueLiters MUST być >= 0 (data-model.md -> MeterReading.valueM3 regułą walidacji). */
+    /** @param reading.valueLiters MUST be >= 0 (data-model.md -> MeterReading.valueM3 validation rule). */
     suspend fun save(reading: MeterReadingEntity): Long {
         require(reading.valueLiters >= 0) { "valueLiters MUST być >= 0" }
         return dao.insert(reading)

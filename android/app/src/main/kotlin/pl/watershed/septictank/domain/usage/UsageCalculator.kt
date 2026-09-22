@@ -7,9 +7,9 @@ import pl.watershed.septictank.domain.warning.WarningLevel
 import pl.watershed.septictank.domain.warning.WarningLevelCalculator
 
 /**
- * Wylicza [UsageState] (data-model.md -> UsageState, FR-005): różnica między najnowszym
- * odczytem a odczytem bazowym z ostatniego [pl.watershed.septictank.data.db.entities.PumpingEventEntity],
- * a jeśli żaden wywóz jeszcze nie miał miejsca -- względem pierwszego zarejestrowanego odczytu (Edge Case).
+ * Computes [UsageState] (data-model.md -> UsageState, FR-005): the difference between the latest
+ * reading and the baseline reading from the most recent [pl.watershed.septictank.data.db.entities.PumpingEventEntity],
+ * or, if no pumping has happened yet, against the first recorded reading (Edge Case).
  */
 class UsageCalculator(
     private val meterReadingRepository: MeterReadingRepository,

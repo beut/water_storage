@@ -21,7 +21,7 @@ import pl.watershed.septictank.ui.Routes
 
 class MainActivity : ComponentActivity() {
     private val notificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* FR-013: przypomnienia działają, nawet gdy odmówiono -- po prostu nie pokażą powiadomienia systemowego. */ }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* FR-013: reminders still work even if denied -- they just won't show a system notification. */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,8 +40,8 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * Ustala ekran startowy: konfiguracja wstępna (Onboarding), jeśli pojemność zbiornika nie została
- * jeszcze podana (US4, Acceptance Scenario 1), w przeciwnym razie ekran główny.
+ * Determines the start screen: initial setup (Onboarding) if the tank capacity hasn't been
+ * provided yet (US4, Acceptance Scenario 1), otherwise the home screen.
  */
 @Composable
 private fun AppRoot(container: AppContainer) {

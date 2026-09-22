@@ -11,8 +11,8 @@ import pl.watershed.septictank.domain.usage.UsageCalculator
 import pl.watershed.septictank.reminders.AppNotifications
 
 /**
- * Ręczny kontener zależności (research.md -> "Architektura aplikacji"): zakres v1 (jeden
- * zbiornik/licznik, brak backendu) nie uzasadnia nakładu na framework DI (np. Hilt).
+ * Manual dependency container (research.md -> "Application architecture"): the v1 scope (single
+ * tank/meter, no backend) doesn't justify the overhead of a DI framework (e.g. Hilt).
  */
 class AppContainer(context: Context) {
     private val database = AppDatabase.getInstance(context)

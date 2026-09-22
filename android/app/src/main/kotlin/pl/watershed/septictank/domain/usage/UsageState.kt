@@ -3,8 +3,8 @@ package pl.watershed.septictank.domain.usage
 import pl.watershed.septictank.domain.warning.WarningLevel
 
 /**
- * Bieżący stan zużycia (data-model.md -> UsageState) -- encja wyliczana, nieprzechowywana
- * bezpośrednio w bazie, tylko w warstwie domenowej na potrzeby UI.
+ * Current usage state (data-model.md -> UsageState) -- a computed entity, not stored directly in
+ * the database, only in the domain layer for the UI.
  */
 data class UsageState(
     val currentUsageLiters: Long,

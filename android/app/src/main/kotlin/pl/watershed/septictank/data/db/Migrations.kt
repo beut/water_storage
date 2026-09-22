@@ -4,10 +4,10 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * v1 -> v2: MeterReadingEntity.photoPath stał się nullable (FR-015, commit fad78c9).
- * SQLite nie obsługuje ALTER COLUMN, więc tabelę trzeba przebudować: nowa tabela z
- * poprawionym schematem, skopiowanie danych, podmiana nazw. Zachowuje dane użytkownika
- * przy aktualizacji aplikacji (zamiast fallbackToDestructiveMigration, które je kasowało).
+ * v1 -> v2: MeterReadingEntity.photoPath became nullable (FR-015, commit fad78c9).
+ * SQLite doesn't support ALTER COLUMN, so the table has to be rebuilt: a new table with the
+ * corrected schema, copy the data over, swap the names. Preserves user data across an app
+ * update (instead of fallbackToDestructiveMigration, which wiped it).
  */
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {

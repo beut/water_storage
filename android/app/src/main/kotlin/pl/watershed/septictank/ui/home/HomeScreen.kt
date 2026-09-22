@@ -21,7 +21,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import pl.watershed.septictank.SepticTankApplication
 import pl.watershed.septictank.domain.warning.WarningLevel
 
-/** Ekran główny (US1, US2, US3): bieżące zużycie, ostrzeżenie, akcja zdjęcia, przycisk wywozu. */
+/** Home screen (US1, US2, US3): current usage, warning, photo action, pumping button. */
 @Composable
 fun HomeScreen(onOpenHistory: () -> Unit, onOpenSettings: () -> Unit) {
     val context = LocalContext.current
@@ -110,7 +110,7 @@ fun HomeScreen(onOpenHistory: () -> Unit, onOpenSettings: () -> Unit) {
     }
 }
 
-/** FR-010: rozróżnia co najmniej dwa poziomy pilności ostrzeżenia. */
+/** FR-010: distinguishes at least two warning urgency levels. */
 @Composable
 private fun WarningBanner(level: WarningLevel) {
     val (message, color) = when (level) {
