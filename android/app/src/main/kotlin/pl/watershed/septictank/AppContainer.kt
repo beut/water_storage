@@ -7,6 +7,8 @@ import pl.watershed.septictank.data.db.PumpingEventRepository
 import pl.watershed.septictank.data.db.TankConfigurationRepository
 import pl.watershed.septictank.data.ocr.MeterOcrReader
 import pl.watershed.septictank.data.photo.PhotoStorage
+import pl.watershed.septictank.data.sms.AndroidSmsSender
+import pl.watershed.septictank.data.sms.SmsSender
 import pl.watershed.septictank.domain.usage.UsageCalculator
 import pl.watershed.septictank.reminders.AppNotifications
 
@@ -20,6 +22,7 @@ class AppContainer(context: Context) {
     val photoStorage = PhotoStorage(context)
     val ocrReader = MeterOcrReader()
     val notifications = AppNotifications(context)
+    val smsSender: SmsSender = AndroidSmsSender(context)
 
     val meterReadingRepository = MeterReadingRepository(database.meterReadingDao())
     val pumpingEventRepository = PumpingEventRepository(database.pumpingEventDao(), database.meterReadingDao())

@@ -1,5 +1,9 @@
 package pl.watershed.septictank.ui.home
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -35,11 +40,23 @@ fun HomeScreen(onOpenHistory: () -> Unit, onOpenSettings: () -> Unit) {
                     container.usageCalculator,
                     container.photoStorage,
                     container.ocrReader,
+                    container.tankConfigurationRepository,
+                    container.smsSender,
                 )
             }
         },
     )
     val state by viewModel.uiState.collectAsState()
+
+    // Spec 003 FR-005: SEND_SMS is requested only when the user confirms the first order.
+    val smsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted -> if (granted) viewModel.onOrderConfirm() else viewModel.onOrderPermissionDenied() }
+    val onOrderConfirm = {
+        val hasSmsPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) ==
+            PackageManager.PERMISSION_GRANTED
+        if (hasSmsPermission) viewModel.onOrderConfirm() else smsPermissionLauncher.launch(Manifest.permission.SEND_SMS)
+    }
 
     when (val step = state.readingFlowStep) {
         is ReadingFlowStep.Capturing -> {
@@ -106,7 +123,23 @@ fun HomeScreen(onOpenHistory: () -> Unit, onOpenSettings: () -> Unit) {
                     onClick = viewModel::registerPumping,
                 ) { Text("Wywóz ścieków") }
             }
+            // Spec 003 FR-001: orders pumping by SMS; does not register a pumping event (FR-009).
+            Row(modifier = Modifier.padding(top = 8.dp)) {
+                Button(onClick = viewModel::onOrderPumpingClick) { Text("Zamów wywóz") }
+            }
         }
+
+        PumpingOrderDialog(
+            state = state.pumpingOrderState,
+            onDaySelected = viewModel::onOrderDaySelected,
+            onConfirm = onOrderConfirm,
+            onRetry = viewModel::onOrderRetry,
+            onDismiss = viewModel::onOrderDismiss,
+            onOpenSettings = {
+                viewModel.onOrderDismiss()
+                onOpenSettings()
+            },
+        )
     }
 }
 

@@ -1,10 +1,13 @@
 package pl.watershed.septictank.ui.settings
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
@@ -21,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -50,6 +54,11 @@ fun SettingsScreen(onBack: () -> Unit) {
     LaunchedEffect(state.capacityM3Text) { capacityText = state.capacityM3Text }
     var capacityError by remember { mutableStateOf(false) }
 
+    var phoneText by remember { mutableStateOf(state.pumpingCompanyPhoneText) }
+    LaunchedEffect(state.pumpingCompanyPhoneText) { phoneText = state.pumpingCompanyPhoneText }
+    var phoneError by remember { mutableStateOf<String?>(null) }
+    var phoneSaved by remember { mutableStateOf(false) }
+
     var reminderEnabled by remember { mutableStateOf(state.reminderEnabled) }
     var reminderIntervalDays by remember { mutableStateOf(state.reminderIntervalDays) }
     LaunchedEffect(state.reminderEnabled, state.reminderIntervalDays) {
@@ -58,7 +67,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     }
 
     Surface(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.padding(24.dp)) {
+        Column(modifier = Modifier.verticalScroll(rememberScrollState()).padding(24.dp)) {
             TextButton(onClick = onBack) { Text("Wróć") }
 
             Text("Pojemność zbiornika (m³)", modifier = Modifier.padding(top = 16.dp))
@@ -72,6 +81,30 @@ fun SettingsScreen(onBack: () -> Unit) {
                 onClick = { capacityError = !viewModel.saveCapacity(capacityText) },
                 modifier = Modifier.padding(top = 8.dp),
             ) { Text("Zapisz pojemność") }
+
+            // Spec 003 FR-002: number used by "Zamów wywóz".
+            Text("Numer firmy asenizacyjnej", modifier = Modifier.padding(top = 24.dp))
+            OutlinedTextField(
+                value = phoneText,
+                onValueChange = {
+                    phoneText = it
+                    phoneError = null
+                    phoneSaved = false
+                },
+                isError = phoneError != null,
+                supportingText = phoneError?.let { error -> { Text(error) } },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Button(
+                onClick = {
+                    phoneError = viewModel.savePumpingCompanyPhone(phoneText)
+                    phoneSaved = phoneError == null
+                },
+                modifier = Modifier.padding(top = 8.dp),
+            ) { Text("Zapisz numer") }
+            if (phoneSaved) Text("Zapisano")
 
             Text("Próg ostrzegawczy: ${state.warningThresholdPercent}%", modifier = Modifier.padding(top = 24.dp))
             Slider(
