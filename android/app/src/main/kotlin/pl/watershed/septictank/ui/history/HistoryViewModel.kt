@@ -8,23 +8,37 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import pl.watershed.septictank.data.db.MeterReadingRepository
 import pl.watershed.septictank.data.db.PumpingEventRepository
-import pl.watershed.septictank.data.db.entities.MeterReadingEntity
-import pl.watershed.septictank.data.db.entities.PumpingEventEntity
+import pl.watershed.septictank.data.db.TankConfigurationRepository
+import pl.watershed.septictank.data.db.entities.TankConfigurationEntity
+import pl.watershed.septictank.domain.history.HistoryPoint
+import pl.watershed.septictank.domain.history.HistoryTrendCalculator
 
-/** FR-012: overview of meter reading history and pumping event history. */
+/**
+ * History tab state (data-model.md -> "Zmiana istniejącej struktury UI"): a single chart of
+ * [chartPoints] (readings + pumping events) instead of two separate text lists.
+ */
 data class HistoryUiState(
-    val readings: List<MeterReadingEntity> = emptyList(),
-    val pumpingEvents: List<PumpingEventEntity> = emptyList(),
+    val chartPoints: List<HistoryPoint> = emptyList(),
+    val warningThresholdPercent: Int? = null,
+    val isCapacityConfigured: Boolean = false,
 )
 
 class HistoryViewModel(
     meterReadingRepository: MeterReadingRepository,
     pumpingEventRepository: PumpingEventRepository,
+    tankConfigurationRepository: TankConfigurationRepository,
 ) : ViewModel() {
     val uiState: StateFlow<HistoryUiState> = combine(
         meterReadingRepository.observeHistory(),
         pumpingEventRepository.observeHistory(),
-    ) { readings, pumpingEvents ->
-        HistoryUiState(readings = readings, pumpingEvents = pumpingEvents)
+        tankConfigurationRepository.observe(),
+    ) { readings, pumpingEvents, configuration ->
+        val resolvedConfiguration = configuration ?: TankConfigurationEntity(capacityLiters = null)
+        val isCapacityConfigured = (resolvedConfiguration.capacityLiters ?: 0) > 0
+        HistoryUiState(
+            chartPoints = HistoryTrendCalculator.calculate(readings, pumpingEvents, resolvedConfiguration),
+            warningThresholdPercent = if (isCapacityConfigured) resolvedConfiguration.warningThresholdPercent else null,
+            isCapacityConfigured = isCapacityConfigured,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryUiState())
 }
