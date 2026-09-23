@@ -76,6 +76,9 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
 
+    // History chart (research.md -> "Biblioteka wykresow dla Jetpack Compose", 002-history-visual-redesign)
+    implementation("com.patrykandpatrick.vico:compose-m3:1.15.0")
+
     // Periodic reminders (research.md -> "Reminders and notifications")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
 

@@ -36,3 +36,13 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         db.execSQL("ALTER TABLE meter_readings_new RENAME TO meter_readings")
     }
 }
+
+/**
+ * v2 -> v3: new nullable TankConfigurationEntity.pumpingCompanyPhone (spec 003, FR-002).
+ * A plain ADD COLUMN -- existing rows get NULL, user data is preserved.
+ */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE tank_configuration ADD COLUMN pumpingCompanyPhone TEXT")
+    }
+}

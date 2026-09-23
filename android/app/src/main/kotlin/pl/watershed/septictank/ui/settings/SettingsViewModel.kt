@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import pl.watershed.septictank.data.db.TankConfigurationRepository
 import pl.watershed.septictank.data.db.entities.TankConfigurationEntity
+import pl.watershed.septictank.domain.order.PhoneNumberValidator
 import pl.watershed.septictank.reminders.MeterPhotoReminderWorker
 
 data class SettingsUiState(
@@ -16,6 +17,7 @@ data class SettingsUiState(
     val warningThresholdPercent: Int = TankConfigurationEntity.DEFAULT_WARNING_THRESHOLD_PERCENT,
     val reminderEnabled: Boolean = false,
     val reminderIntervalDays: Int = 7,
+    val pumpingCompanyPhoneText: String = "",
 )
 
 /** FR-008, FR-013: tank capacity, warning threshold and reminder configuration. */
@@ -35,6 +37,7 @@ class SettingsViewModel(
                 warningThresholdPercent = configuration.warningThresholdPercent,
                 reminderEnabled = configuration.reminderEnabled,
                 reminderIntervalDays = configuration.reminderIntervalDays ?: 7,
+                pumpingCompanyPhoneText = configuration.pumpingCompanyPhone ?: "",
             )
         }
     }
@@ -53,6 +56,21 @@ class SettingsViewModel(
         if (percent !in 1..99) return
         viewModelScope.launch { tankConfigurationRepository.updateWarningThreshold(percent) }
         _uiState.value = _uiState.value.copy(warningThresholdPercent = percent)
+    }
+
+    /**
+     * Spec 003 FR-002: saves the pumping company number (blank clears it).
+     * @return `null` on success, otherwise the validation error message (nothing is saved).
+     */
+    fun savePumpingCompanyPhone(text: String): String? {
+        val normalized = when (val result = PhoneNumberValidator.validate(text)) {
+            is PhoneNumberValidator.Result.Invalid -> return result.reason
+            is PhoneNumberValidator.Result.Valid -> result.normalized
+            PhoneNumberValidator.Result.Empty -> null
+        }
+        viewModelScope.launch { tankConfigurationRepository.updatePumpingCompanyPhone(normalized) }
+        _uiState.value = _uiState.value.copy(pumpingCompanyPhoneText = normalized ?: "")
+        return null
     }
 
     fun setReminder(enabled: Boolean, intervalDays: Int) {

@@ -32,4 +32,16 @@ class TankConfigurationRepository(private val dao: TankConfigurationDao) {
         }
         dao.upsert(get().copy(reminderEnabled = enabled, reminderIntervalDays = intervalDays))
     }
+
+    /** @param phone normalized `+?[0-9]{9,15}` (data-model.md, spec 003), or `null` to clear it. */
+    suspend fun updatePumpingCompanyPhone(phone: String?) {
+        require(phone == null || NORMALIZED_PHONE.matches(phone)) {
+            "pumpingCompanyPhone MUST mieć postać +?[0-9]{9,15}"
+        }
+        dao.upsert(get().copy(pumpingCompanyPhone = phone))
+    }
+
+    private companion object {
+        val NORMALIZED_PHONE = Regex("^\\+?[0-9]{9,15}$")
+    }
 }

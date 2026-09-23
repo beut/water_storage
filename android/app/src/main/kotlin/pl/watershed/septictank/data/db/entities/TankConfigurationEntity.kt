@@ -17,6 +17,11 @@ data class TankConfigurationEntity(
     val warningThresholdPercent: Int = DEFAULT_WARNING_THRESHOLD_PERCENT,
     val reminderEnabled: Boolean = false,
     val reminderIntervalDays: Int? = null,
+    /**
+     * Pumping company phone number for "Zamów wywóz" (spec 003, FR-002/FR-008), normalized to
+     * `+?[0-9]{9,15}`; `null` = not configured.
+     */
+    val pumpingCompanyPhone: String? = null,
 ) {
     companion object {
         const val SINGLETON_ID = 1L
