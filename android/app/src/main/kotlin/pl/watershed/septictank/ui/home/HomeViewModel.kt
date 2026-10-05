@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import java.io.File
 import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import pl.watershed.septictank.data.db.MeterReadingRepository
 import pl.watershed.septictank.data.db.PumpingEventRepository
@@ -17,6 +19,8 @@ import pl.watershed.septictank.data.ocr.MeterOcrReader
 import pl.watershed.septictank.data.photo.PhotoStorage
 import pl.watershed.septictank.data.sms.SmsSendResult
 import pl.watershed.septictank.data.sms.SmsSender
+import pl.watershed.septictank.domain.forecast.PumpingForecast
+import pl.watershed.septictank.domain.forecast.PumpingForecastCalculator
 import pl.watershed.septictank.domain.order.PumpingOrderMessage
 import pl.watershed.septictank.domain.order.availableOrderDays
 import pl.watershed.septictank.domain.usage.UsageCalculator
@@ -60,6 +64,7 @@ data class HomeUiState(
     val latestReadingLiters: Long? = null,
     val readingFlowStep: ReadingFlowStep = ReadingFlowStep.Idle,
     val missingCapacityWarning: Boolean = false,
+    val forecast: PumpingForecast? = null,
     val pumpingOrderState: PumpingOrderState = PumpingOrderState.Hidden,
 )
 
@@ -84,12 +89,23 @@ class HomeViewModel(
         viewModelScope.launch {
             val usage = usageCalculator.calculate()
             val latest = meterReadingRepository.latest()
+            val forecast = usage?.let {
+                PumpingForecastCalculator.calculate(
+                    readings = meterReadingRepository.observeHistory().first(),
+                    lastPumpingMillis = pumpingEventRepository.latest()?.timestampMillis,
+                    currentUsageLiters = it.currentUsageLiters,
+                    capacityLiters = it.capacityLiters,
+                    nowMillis = System.currentTimeMillis(),
+                    zone = ZoneId.systemDefault(),
+                )
+            }
             _uiState.value = _uiState.value.copy(
                 usageState = usage,
                 hasAnyReading = latest != null,
                 latestReadingLiters = latest?.valueLiters,
                 // FR-009: warnings MUST be suppressed without a configured capacity (Edge Case).
                 missingCapacityWarning = latest != null && usage?.capacityLiters == null,
+                forecast = forecast,
             )
         }
     }
