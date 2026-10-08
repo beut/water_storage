@@ -15,16 +15,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -53,6 +51,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import pl.watershed.septictank.SepticTankApplication
+import pl.watershed.septictank.ui.common.AppCard
 import pl.watershed.septictank.domain.forecast.PumpingForecast
 import pl.watershed.septictank.domain.forecast.PumpingForecastCalculator
 import pl.watershed.septictank.domain.usage.UsageState
@@ -60,7 +59,11 @@ import pl.watershed.septictank.domain.warning.WarningLevel
 
 /** Home screen (US1, US2, US3): current usage, warning, photo action, pumping button. */
 @Composable
-fun HomeScreen(onOpenHistory: () -> Unit, onOpenSettings: () -> Unit) {
+fun HomeScreen(
+    onOpenHistory: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenPumpingHistory: () -> Unit,
+) {
     val context = LocalContext.current
     val container = (context.applicationContext as SepticTankApplication).container
     val viewModel: HomeViewModel = viewModel(
@@ -156,6 +159,11 @@ fun HomeScreen(onOpenHistory: () -> Unit, onOpenSettings: () -> Unit) {
                     Text("Zamów wywóz")
                 }
             }
+            OutlinedButton(onClick = onOpenPumpingHistory, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Filled.DateRange, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                Text("Historia wywozów")
+            }
         }
 
         PumpingOrderDialog(
@@ -191,28 +199,14 @@ private fun SectionLabel(text: String) {
     )
 }
 
-@Composable
-private fun HomeCard(content: @Composable () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            content()
-        }
-    }
-}
-
 /** Big fill percent + progress bar coloured by warning level (FR-009, FR-010). */
 @Composable
 private fun TankStatusCard(usage: UsageState?, missingCapacityWarning: Boolean) {
-    HomeCard {
+    AppCard {
         Text("Stan zbiornika", style = MaterialTheme.typography.titleMedium)
         if (usage == null) {
             Text("Brak jeszcze żadnego odczytu licznika.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            return@HomeCard
+            return@AppCard
         }
 
         val usedM3 = "%.3f".format(usage.currentUsageLiters / 1000.0)
@@ -279,7 +273,7 @@ private fun warningMessage(level: WarningLevel): String? = when (level) {
 @Composable
 private fun ForecastCard(forecast: PumpingForecast) {
     val rows = remember(forecast) { ForecastTexts.rows(forecast, LocalDate.now()) }
-    HomeCard {
+    AppCard {
         Text("Prognoza", style = MaterialTheme.typography.titleMedium)
         rows.forEachIndexed { index, row ->
             if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
