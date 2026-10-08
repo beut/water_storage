@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import pl.watershed.septictank.ui.history.HistoryScreen
 import pl.watershed.septictank.ui.home.HomeScreen
+import pl.watershed.septictank.ui.pumping.PumpingHistoryScreen
 import pl.watershed.septictank.ui.settings.OnboardingScreen
 import pl.watershed.septictank.ui.settings.SettingsScreen
 
@@ -15,6 +16,7 @@ object Routes {
     const val ONBOARDING = "onboarding"
     const val HOME = "home"
     const val HISTORY = "history"
+    const val PUMPING_HISTORY = "pumping_history"
     const val SETTINGS = "settings"
 }
 
@@ -37,10 +39,14 @@ fun AppNavHost(
             HomeScreen(
                 onOpenHistory = { navController.navigate(Routes.HISTORY) },
                 onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                onOpenPumpingHistory = { navController.navigate(Routes.PUMPING_HISTORY) },
             )
         }
         composable(Routes.HISTORY) {
             HistoryScreen(onBack = { navController.popBackStack() })
+        }
+        composable(Routes.PUMPING_HISTORY) {
+            PumpingHistoryScreen(onBack = { navController.popBackStack() })
         }
         composable(Routes.SETTINGS) {
             SettingsScreen(onBack = { navController.popBackStack() })
