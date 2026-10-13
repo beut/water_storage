@@ -85,7 +85,8 @@ class HomeViewModel(
         refreshUsage()
     }
 
-    private fun refreshUsage() {
+    /** Also called whenever Home is shown again, e.g. after a pumping was deleted in its history. */
+    fun refreshUsage() {
         viewModelScope.launch {
             val usage = usageCalculator.calculate()
             val latest = meterReadingRepository.latest()
