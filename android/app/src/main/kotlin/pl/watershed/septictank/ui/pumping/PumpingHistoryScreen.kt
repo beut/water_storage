@@ -10,15 +10,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -54,6 +60,7 @@ fun PumpingHistoryScreen(onBack: () -> Unit) {
         },
     )
     val history by viewModel.history.collectAsState()
+    var deleting by rememberSaveable { mutableStateOf<Long?>(null) }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surfaceContainerLow) {
         LazyColumn(
@@ -88,7 +95,24 @@ fun PumpingHistoryScreen(onBack: () -> Unit) {
             }
 
             item { SummaryCard(current.summary) }
-            items(current.entries, key = { it.pumpingEventId }) { entry -> PumpingEntryCard(entry) }
+            items(current.entries, key = { it.pumpingEventId }) { entry ->
+                PumpingEntryCard(entry, onDelete = { deleting = entry.pumpingEventId })
+            }
+        }
+
+        deleting?.let { id ->
+            AlertDialog(
+                onDismissRequest = { deleting = null },
+                title = { Text("Usunąć wywóz?") },
+                text = { Text("Wpis zostanie usunięty, a zużycie przeliczone od poprzedniego wywozu.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        deleting = null
+                        viewModel.deletePumping(id)
+                    }) { Text("Usuń") }
+                },
+                dismissButton = { TextButton(onClick = { deleting = null }) { Text("Anuluj") } },
+            )
         }
     }
 }
@@ -108,7 +132,7 @@ private fun SummaryCard(summary: PumpingHistorySummary) {
 }
 
 @Composable
-private fun PumpingEntryCard(entry: PumpingHistoryEntry) {
+private fun PumpingEntryCard(entry: PumpingHistoryEntry, onDelete: () -> Unit) {
     val texts = PumpingHistoryTexts.entry(entry, ZoneId.systemDefault())
     AppCard {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -123,6 +147,9 @@ private fun PumpingEntryCard(entry: PumpingHistoryEntry) {
                     color = if (entry.isFirstRecorded) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.End,
                 )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Filled.Delete, contentDescription = "Usuń wywóz", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         texts.volume?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }

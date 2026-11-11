@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
@@ -31,10 +32,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -82,6 +88,9 @@ fun HomeScreen(
         },
     )
     val state by viewModel.uiState.collectAsState()
+    var confirmingPumping by rememberSaveable { mutableStateOf(false) }
+    // Pumping history can delete events, so usage is recalculated every time Home is shown.
+    LaunchedEffect(Unit) { viewModel.refreshUsage() }
 
     // Spec 003 FR-005: SEND_SMS is requested only when the user confirms the first order.
     val smsPermissionLauncher = rememberLauncherForActivityResult(
@@ -151,7 +160,7 @@ fun HomeScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FilledTonalButton(
                     enabled = state.hasAnyReading,
-                    onClick = viewModel::registerPumping,
+                    onClick = { confirmingPumping = true },
                     modifier = Modifier.weight(1f),
                 ) { Text("Wywóz ścieków") }
                 // Spec 003 FR-001: orders pumping by SMS; does not register a pumping event (FR-009).
@@ -164,6 +173,21 @@ fun HomeScreen(
                 Spacer(Modifier.width(ButtonDefaults.IconSpacing))
                 Text("Historia wywozów")
             }
+        }
+
+        if (confirmingPumping) {
+            AlertDialog(
+                onDismissRequest = { confirmingPumping = false },
+                title = { Text("Czy na pewno?") },
+                text = { Text("Zarejestrować wywóz ścieków? Zużycie zostanie wyzerowane od ostatniego odczytu licznika.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        confirmingPumping = false
+                        viewModel.registerPumping()
+                    }) { Text("Tak, wyzeruj") }
+                },
+                dismissButton = { TextButton(onClick = { confirmingPumping = false }) { Text("Anuluj") } },
+            )
         }
 
         PumpingOrderDialog(

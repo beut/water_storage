@@ -11,6 +11,9 @@ interface PumpingEventDao {
     @Insert
     suspend fun insert(event: PumpingEventEntity): Long
 
+    @Query("DELETE FROM pumping_events WHERE id = :id")
+    suspend fun delete(id: Long)
+
     @Query("SELECT * FROM pumping_events ORDER BY timestampMillis DESC LIMIT 1")
     suspend fun getLatest(): PumpingEventEntity?
 

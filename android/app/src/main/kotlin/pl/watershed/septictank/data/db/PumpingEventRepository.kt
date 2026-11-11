@@ -23,6 +23,9 @@ class PumpingEventRepository(
         return event.copy(id = id)
     }
 
+    /** Undoes a mistaken registration; usage falls back to the previous pumping's baseline. */
+    suspend fun delete(id: Long) = dao.delete(id)
+
     suspend fun latest(): PumpingEventEntity? = dao.getLatest()
 
     fun observeHistory(): Flow<List<PumpingEventEntity>> = dao.observeHistory()
