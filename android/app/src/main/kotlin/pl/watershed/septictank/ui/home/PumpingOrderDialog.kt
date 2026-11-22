@@ -6,9 +6,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -21,6 +30,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import pl.watershed.septictank.domain.order.PumpingOrderMessage
+import pl.watershed.septictank.ui.theme.AppIcons
 
 private val POLISH = Locale("pl", "PL")
 private val DAY_MONTH_FORMAT = DateTimeFormatter.ofPattern("dd.MM")
@@ -39,6 +49,7 @@ fun PumpingOrderDialog(
         PumpingOrderState.Hidden -> Unit
         PumpingOrderState.MissingPhone -> AlertDialog(
             onDismissRequest = onDismiss,
+            icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
             title = { Text("Zamów wywóz") },
             text = { Text("Nie ustawiono numeru firmy asenizacyjnej. Wpisz go w Ustawieniach.") },
             confirmButton = { TextButton(onClick = onOpenSettings) { Text("Przejdź do ustawień") } },
@@ -46,13 +57,15 @@ fun PumpingOrderDialog(
         )
         is PumpingOrderState.Choosing -> AlertDialog(
             onDismissRequest = onDismiss,
+            icon = { Icon(AppIcons.LocalShipping, contentDescription = null) },
             title = { Text("Zamów wywóz") },
             text = { ChoosingContent(state, onDaySelected) },
-            confirmButton = { TextButton(onClick = onConfirm) { Text("Wyślij") } },
+            confirmButton = { TextButton(onClick = onConfirm) { Text("Wyślij SMS") } },
             dismissButton = { TextButton(onClick = onDismiss) { Text("Anuluj") } },
         )
         is PumpingOrderState.PermissionDenied -> AlertDialog(
             onDismissRequest = onDismiss,
+            icon = { Icon(Icons.Filled.Warning, contentDescription = null) },
             title = { Text("Potrzebne uprawnienie") },
             text = {
                 Text(
@@ -77,6 +90,7 @@ fun PumpingOrderDialog(
         )
         is PumpingOrderState.Sent -> AlertDialog(
             onDismissRequest = onDismiss,
+            icon = { Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             title = { Text("Zamówiono wywóz") },
             text = {
                 Text("Zamówiono wywóz ${PumpingOrderMessage.dayPhrase(state.day.dayOfWeek)} (SMS do ${state.phoneNumber})")
@@ -85,6 +99,7 @@ fun PumpingOrderDialog(
         )
         is PumpingOrderState.Failed -> AlertDialog(
             onDismissRequest = onDismiss,
+            icon = { Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
             title = { Text("Nie wysłano SMS-a") },
             text = { Text(state.reason) },
             confirmButton = { TextButton(onClick = onRetry) { Text("Ponów") } },
@@ -96,8 +111,8 @@ fun PumpingOrderDialog(
 @Composable
 private fun ChoosingContent(state: PumpingOrderState.Choosing, onDaySelected: (LocalDate) -> Unit) {
     Column {
-        Text("Na kiedy?")
-        Column(modifier = Modifier.selectableGroup().padding(top = 8.dp)) {
+        Text("Na kiedy?", style = MaterialTheme.typography.titleSmall)
+        Column(modifier = Modifier.selectableGroup().padding(top = 4.dp)) {
             state.days.forEachIndexed { index, day ->
                 val label = "${day.dayOfWeek.getDisplayName(TextStyle.FULL, POLISH)} ${day.format(DAY_MONTH_FORMAT)}" +
                     if (index == 0) " (najwcześniej)" else ""
@@ -105,14 +120,31 @@ private fun ChoosingContent(state: PumpingOrderState.Choosing, onDaySelected: (L
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .heightIn(min = 48.dp)
                         .selectable(selected = day == state.selected, onClick = { onDaySelected(day) }, role = Role.RadioButton),
                 ) {
                     RadioButton(selected = day == state.selected, onClick = null)
-                    Text(label, modifier = Modifier.padding(start = 8.dp))
+                    Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 12.dp))
                 }
             }
         }
-        Text("SMS do: ${state.phoneNumber}", modifier = Modifier.padding(top = 12.dp))
-        Text("„${state.message}”")
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Phone, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                    Text("SMS do: ${state.phoneNumber}", style = MaterialTheme.typography.labelLarge)
+                }
+                Text(
+                    "„${state.message}”",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+        }
     }
 }

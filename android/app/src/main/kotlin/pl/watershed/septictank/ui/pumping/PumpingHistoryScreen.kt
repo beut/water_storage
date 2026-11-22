@@ -6,15 +6,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -22,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -37,6 +32,15 @@ import pl.watershed.septictank.SepticTankApplication
 import pl.watershed.septictank.domain.pumping.PumpingHistoryEntry
 import pl.watershed.septictank.domain.pumping.PumpingHistorySummary
 import pl.watershed.septictank.ui.common.AppCard
+import pl.watershed.septictank.ui.common.AppScaffold
+import pl.watershed.septictank.ui.common.CardTitle
+import pl.watershed.septictank.ui.common.CenteredContent
+import pl.watershed.septictank.ui.common.EmptyState
+import pl.watershed.septictank.ui.common.IconBadge
+import pl.watershed.septictank.ui.common.InfoRow
+import pl.watershed.septictank.ui.common.ScreenHorizontalPadding
+import pl.watershed.septictank.ui.common.SectionHeader
+import pl.watershed.septictank.ui.theme.AppIcons
 
 /** Past pumpings: when, after how many days, and how much was emptied. */
 @Composable
@@ -55,40 +59,29 @@ fun PumpingHistoryScreen(onBack: () -> Unit) {
     )
     val history by viewModel.history.collectAsState()
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surfaceContainerLow) {
-        LazyColumn(
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Wróć")
-                    }
-                    Text(
-                        "Historia wywozów",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            }
+    AppScaffold(title = "Historia wywozów", onBack = onBack) { innerPadding ->
+        val current = history ?: return@AppScaffold
+        if (current.entries.isEmpty()) {
+            EmptyState(
+                icon = AppIcons.LocalShipping,
+                title = "Brak wywozów",
+                message = "Nie zarejestrowano jeszcze żadnego wywozu. Po opróżnieniu zbiornika wybierz " +
+                    "„Zarejestruj wykonany wywóz” na ekranie głównym.",
+                modifier = Modifier.padding(innerPadding),
+            )
+            return@AppScaffold
+        }
 
-            val current = history ?: return@LazyColumn
-            if (current.entries.isEmpty()) {
-                item {
-                    AppCard {
-                        Text(
-                            "Nie zarejestrowano jeszcze żadnego wywozu. Po opróżnieniu zbiornika naciśnij " +
-                                "„Wywóz ścieków” na ekranie głównym.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                return@LazyColumn
+        CenteredContent(modifier = Modifier.padding(innerPadding)) {
+            LazyColumn(
+                contentPadding = PaddingValues(horizontal = ScreenHorizontalPadding, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                item { SummaryCard(current.summary) }
+                item { SectionHeader("Wszystkie wywozy") }
+                items(current.entries, key = { it.pumpingEventId }) { entry -> PumpingEntryCard(entry) }
             }
-
-            item { SummaryCard(current.summary) }
-            items(current.entries, key = { it.pumpingEventId }) { entry -> PumpingEntryCard(entry) }
         }
     }
 }
@@ -96,12 +89,11 @@ fun PumpingHistoryScreen(onBack: () -> Unit) {
 @Composable
 private fun SummaryCard(summary: PumpingHistorySummary) {
     AppCard {
-        Text("Podsumowanie", style = MaterialTheme.typography.titleMedium)
-        PumpingHistoryTexts.summaryRows(summary).forEachIndexed { index, (label, value) ->
-            if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                Text(value, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
+        CardTitle("Podsumowanie")
+        Column {
+            PumpingHistoryTexts.summaryRows(summary).forEachIndexed { index, (label, value) ->
+                if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(vertical = 8.dp))
+                InfoRow(label = label, value = value, emphasized = true)
             }
         }
     }
@@ -110,22 +102,31 @@ private fun SummaryCard(summary: PumpingHistorySummary) {
 @Composable
 private fun PumpingEntryCard(entry: PumpingHistoryEntry) {
     val texts = PumpingHistoryTexts.entry(entry, ZoneId.systemDefault())
-    AppCard {
+    AppCard(contentPadding = PaddingValues(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(texts.date, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            IconBadge(AppIcons.LocalShipping)
+            Column(modifier = Modifier.weight(1f).padding(start = 16.dp)) {
+                Text(texts.date, style = MaterialTheme.typography.titleMedium)
                 Text(texts.weekday, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                texts.volume?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
             texts.interval?.let {
                 Text(
                     it,
-                    style = if (entry.isFirstRecorded) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleMedium,
+                    style = if (entry.isFirstRecorded) MaterialTheme.typography.bodySmall else MaterialTheme.typography.titleSmall,
                     color = if (entry.isFirstRecorded) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.End,
+                    modifier = Modifier.padding(start = 12.dp),
                 )
             }
         }
-        texts.volume?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
 

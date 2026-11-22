@@ -5,9 +5,10 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,20 +19,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import pl.watershed.septictank.ui.AppNavHost
 import pl.watershed.septictank.ui.Routes
+import pl.watershed.septictank.ui.theme.SepticTankTheme
 
 class MainActivity : ComponentActivity() {
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* FR-013: reminders still work even if denied -- they just won't show a system notification. */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Draw behind the system bars; Scaffold/insets in each screen keep content readable.
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         val container = (application as SepticTankApplication).container
         setContent {
-            MaterialTheme {
-                Surface(modifier = Modifier) {
+            SepticTankTheme {
+                Surface(modifier = Modifier.fillMaxSize()) {
                     AppRoot(container)
                 }
             }

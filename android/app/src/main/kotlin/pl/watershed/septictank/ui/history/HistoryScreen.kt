@@ -1,7 +1,10 @@
 package pl.watershed.septictank.ui.history
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,15 +12,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -63,6 +69,15 @@ import pl.watershed.septictank.SepticTankApplication
 import pl.watershed.septictank.data.db.entities.ReadingSource
 import pl.watershed.septictank.domain.history.HistoryPoint
 import pl.watershed.septictank.domain.history.HistoryPointType
+import pl.watershed.septictank.ui.common.AppCard
+import pl.watershed.septictank.ui.common.AppScaffold
+import pl.watershed.septictank.ui.common.CardTitle
+import pl.watershed.septictank.ui.common.CenteredContent
+import pl.watershed.septictank.ui.common.EmptyState
+import pl.watershed.septictank.ui.common.NoticeBanner
+import pl.watershed.septictank.ui.common.ScreenHorizontalPadding
+import pl.watershed.septictank.ui.theme.AppIcons
+import pl.watershed.septictank.ui.theme.AppTheme
 
 private const val MILLIS_PER_DAY = 86_400_000L
 
@@ -83,21 +98,28 @@ fun HistoryScreen(onBack: () -> Unit) {
     )
     val state by viewModel.uiState.collectAsState()
 
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            TextButton(onClick = onBack) { Text("Wróć") }
-
-            Text("Historia zbiornika", modifier = Modifier.padding(top = 12.dp))
-
-            if (state.chartPoints.isEmpty()) {
-                // FR-007: friendly empty state instead of an empty/broken chart.
-                Text(
-                    "Brak jeszcze żadnych danych. Zrób zdjęcie licznika lub wpisz odczyt ręcznie, " +
-                        "aby zobaczyć tutaj wykres wypełnienia zbiornika.",
-                    modifier = Modifier.padding(top = 16.dp),
-                )
-            } else {
-                HistoryChart(state)
+    AppScaffold(title = "Historia zbiornika", onBack = onBack) { innerPadding ->
+        if (state.chartPoints.isEmpty()) {
+            // FR-007: friendly empty state instead of an empty/broken chart.
+            EmptyState(
+                icon = AppIcons.ShowChart,
+                title = "Brak danych",
+                message = "Zrób zdjęcie licznika lub wpisz odczyt ręcznie, aby zobaczyć tutaj wykres " +
+                    "wypełnienia zbiornika.",
+                modifier = Modifier.padding(innerPadding),
+            )
+        } else {
+            CenteredContent(modifier = Modifier.padding(innerPadding)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = ScreenHorizontalPadding)
+                        .padding(top = 8.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    HistoryChart(state)
+                }
             }
         }
     }
@@ -107,10 +129,11 @@ fun HistoryScreen(onBack: () -> Unit) {
 private fun HistoryChart(state: HistoryUiState) {
     if (!state.isCapacityConfigured) {
         // FR-004: percent fill requires a configured tank capacity; show m3 and explain why.
-        Text(
-            "Skonfiguruj pojemność zbiornika w Ustawieniach, aby zobaczyć wypełnienie w procentach.",
-            color = MaterialTheme.colorScheme.tertiary,
-            modifier = Modifier.padding(top = 12.dp),
+        NoticeBanner(
+            icon = Icons.Filled.Info,
+            text = "Skonfiguruj pojemność zbiornika w Ustawieniach, aby zobaczyć wypełnienie w procentach.",
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
         )
     }
 
@@ -123,11 +146,14 @@ private fun HistoryChart(state: HistoryUiState) {
     // Always-visible numeric preview (m3 and, when available, %) -- not only on tap, so the exact
     // current value is never hidden behind a gesture the user has to discover.
     points.lastOrNull { it.type == HistoryPointType.READING }?.let { latest ->
-        Text(
-            "Aktualne wypełnienie: ${formatValue(latest)}",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 12.dp),
-        )
+        AppCard {
+            Text(
+                "Aktualne wypełnienie",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(formatValue(latest), style = MaterialTheme.typography.headlineSmall)
+        }
     }
 
     val readingEntries = remember(points) {
@@ -152,11 +178,10 @@ private fun HistoryChart(state: HistoryUiState) {
 
     val readingColor = MaterialTheme.colorScheme.primary
     val pumpingColor = MaterialTheme.colorScheme.secondary
-    val thresholdColor = MaterialTheme.colorScheme.tertiary
-    // Explicit MaterialTheme colors for the axis: Vico's own default axis style picks colors based
-    // on the *system* dark-mode setting, but this app's MaterialTheme is always light (MainActivity
-    // never passes a dark colorScheme) -- on a phone with system dark mode on, Vico's un-styled
-    // default axis would render light-on-light (invisible: "just lines, no scale").
+    val thresholdColor = AppTheme.statusColors.warning
+    // Explicit MaterialTheme colors for the axis: Vico's own default axis style picks its colors
+    // independently of the app theme -- styling it from the theme keeps the scale readable in both
+    // light and dark mode.
     val axisLabelColor = MaterialTheme.colorScheme.onSurface
     val axisLineColor = MaterialTheme.colorScheme.outline
 
@@ -231,46 +256,53 @@ private fun HistoryChart(state: HistoryUiState) {
         )
     } ?: emptyList()
 
-    Chart(
-        chart = lineChart(
-            lines = if (hasPumpingPoints) listOf(readingLine, pumpingLine) else listOf(readingLine),
-            decorations = decorations,
-            axisValuesOverrider = axisValuesOverrider,
-        ),
-        chartModelProducer = modelProducer,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(260.dp)
-            .padding(top = 16.dp),
-        startAxis = rememberStartAxis(
-            valueFormatter = startAxisFormatter,
-            itemPlacer = startAxisItemPlacer,
-            label = axisLabelComponent(color = axisLabelColor),
-            axis = axisLineComponent(color = axisLineColor, shape = Shapes.rectShape),
-            tick = axisTickComponent(color = axisLineColor, shape = Shapes.rectShape),
-            guideline = axisGuidelineComponent(color = axisLineColor.copy(alpha = 0.3f)),
-        ),
-        bottomAxis = rememberBottomAxis(
-            valueFormatter = bottomAxisFormatter,
-            label = axisLabelComponent(color = axisLabelColor),
-            axis = axisLineComponent(color = axisLineColor, shape = Shapes.rectShape),
-            tick = axisTickComponent(color = axisLineColor, shape = Shapes.rectShape),
-            guideline = axisGuidelineComponent(color = axisLineColor.copy(alpha = 0.3f)),
-        ),
-        marker = marker,
-        // FR-006 / FR-008: horizontal pan and pinch-to-zoom across the full history (both default to
-        // enabled in Vico, set explicitly here to document the requirement).
-        chartScrollSpec = rememberChartScrollSpec(isScrollEnabled = true),
-        isZoomEnabled = true,
+    AppCard(contentPadding = PaddingValues(start = 12.dp, end = 16.dp, top = 20.dp, bottom = 16.dp)) {
+        CardTitle("Wypełnienie w czasie", icon = AppIcons.ShowChart)
+        Chart(
+            chart = lineChart(
+                lines = if (hasPumpingPoints) listOf(readingLine, pumpingLine) else listOf(readingLine),
+                decorations = decorations,
+                axisValuesOverrider = axisValuesOverrider,
+            ),
+            chartModelProducer = modelProducer,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(280.dp),
+            startAxis = rememberStartAxis(
+                valueFormatter = startAxisFormatter,
+                itemPlacer = startAxisItemPlacer,
+                label = axisLabelComponent(color = axisLabelColor),
+                axis = axisLineComponent(color = axisLineColor, shape = Shapes.rectShape),
+                tick = axisTickComponent(color = axisLineColor, shape = Shapes.rectShape),
+                guideline = axisGuidelineComponent(color = axisLineColor.copy(alpha = 0.3f)),
+            ),
+            bottomAxis = rememberBottomAxis(
+                valueFormatter = bottomAxisFormatter,
+                label = axisLabelComponent(color = axisLabelColor),
+                axis = axisLineComponent(color = axisLineColor, shape = Shapes.rectShape),
+                tick = axisTickComponent(color = axisLineColor, shape = Shapes.rectShape),
+                guideline = axisGuidelineComponent(color = axisLineColor.copy(alpha = 0.3f)),
+            ),
+            marker = marker,
+            // FR-006 / FR-008: horizontal pan and pinch-to-zoom across the full history (both default to
+            // enabled in Vico, set explicitly here to document the requirement).
+            chartScrollSpec = rememberChartScrollSpec(isScrollEnabled = true),
+            isZoomEnabled = true,
+        )
+        HistoryLegend(readingColor = readingColor, pumpingColor = pumpingColor)
+    }
+    Text(
+        "Przesuń wykres, aby przewinąć. Rozsuń palce, aby powiększyć. Dotknij punktu, aby zobaczyć szczegóły.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 4.dp),
     )
-
-    HistoryLegend(readingColor = readingColor, pumpingColor = pumpingColor)
 }
 
 /** FR-002 accessibility intent: shape + text legend, not color alone, readable by screen readers. */
 @Composable
 private fun HistoryLegend(readingColor: Color, pumpingColor: Color) {
-    Row(modifier = Modifier.padding(top = 8.dp)) {
+    Row(modifier = Modifier.padding(start = 8.dp, top = 4.dp)) {
         LegendItem(color = readingColor, shape = CircleShape, label = "Odczyt licznika")
         LegendItem(color = pumpingColor, shape = CutCornerShape(50), label = "Wywóz ścieków", modifier = Modifier.padding(start = 16.dp))
     }
@@ -278,14 +310,19 @@ private fun HistoryLegend(readingColor: Color, pumpingColor: Color) {
 
 @Composable
 private fun LegendItem(color: Color, shape: androidx.compose.ui.graphics.Shape, label: String, modifier: Modifier = Modifier) {
-    Row(modifier = modifier) {
-        androidx.compose.foundation.layout.Box(
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        Box(
             modifier = Modifier
                 .size(12.dp)
                 .background(color, shape)
                 .clearAndSetSemantics {},
         )
-        Text(label, modifier = Modifier.padding(start = 4.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 6.dp),
+        )
     }
 }
 

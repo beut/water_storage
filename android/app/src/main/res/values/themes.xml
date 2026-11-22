@@ -1,0 +1,9 @@
+<resources>
+    <!-- Window theme shown before Compose draws (launch, transitions). Matches the Compose
+         background so there is no white/black flash; the night variant lives in values-night. -->
+    <style name="Theme.SepticTank" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+</resources>
